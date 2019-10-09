@@ -6,13 +6,15 @@
 #include <termios.h>
 #include <stdio.h>
 
-#define BAUDRATE B38400
+#define BAUDRATE B9600 	
 #define MODEMDEVICE "/dev/ttyS1"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
 
 volatile int STOP=FALSE;
+
+char SET={ // F - 0x7E, A - 0x03 ||0x01 , C - 0x03 || 0x07,//xor A C, 0x7E};   
 
 int main(int argc, char** argv)
 {
@@ -28,7 +30,7 @@ int main(int argc, char** argv)
       exit(1);
     }
 
-
+	
   /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
@@ -52,7 +54,7 @@ int main(int argc, char** argv)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1 ;   /* blocking read until 5 chars received */
 
 
 
@@ -60,8 +62,6 @@ int main(int argc, char** argv)
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
     leitura do(s) próximo(s) caracter(es)
   */
-
-
 
     tcflush(fd, TCIOFLUSH);
 
@@ -72,18 +72,39 @@ int main(int argc, char** argv)
 
     printf("New termios structure set\n");
 
-
-
+	
+	
     for (i = 0; i < 255; i++) {
       buf[i] = 'a';
     }
-    
+	
+	    
+
+
     /*testing*/
-    buf[25] = '\n';
-    
-    res = write(fd,buf,255);   
+    buf[25] = "ola\n";
+	
+	printf("Type text to send: "); 
+	
+	gets(buf);
+
+	printf("Passed: %s Size: %d\n", buf,sizeof(buf)); 
+	
+	//get string char size
+
+	for( int i =0; i<255; i++){
+		printf("C[%d]: %c \n", i,buf[i]); 
+		if(buf[i] == '\0')
+			break; 
+		c++; 
+	}
+	printf( "C - %d \n", c); 
+	//write to serial port FD 
+ 	res = write(fd,buf,c);   
     printf("%d bytes written\n", res);
- 
+	res = read(fd,buf,sizeof(buf));
+	printf("Received:%s\n",buf);   
+	
 
   /* 
     O ciclo FOR e as instruções seguintes devem ser alterados de modo a respeitar 
@@ -92,7 +113,7 @@ int main(int argc, char** argv)
 
 
 
-   
+   	sleep(1); 
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
       exit(-1);
@@ -104,3 +125,4 @@ int main(int argc, char** argv)
     close(fd);
     return 0;
 }
+
