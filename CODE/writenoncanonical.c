@@ -6,7 +6,7 @@
 #include <termios.h>
 #include <stdio.h>
 
-#define BAUDRATE B9600 	
+#define BAUDRATE B115200 //B9600   lab 	
 #define MODEMDEVICE "/dev/ttyS1"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
@@ -14,7 +14,7 @@
 
 volatile int STOP=FALSE;
 
-char SET={ // F - 0x7E, A - 0x03 ||0x01 , C - 0x03 || 0x07,//xor A C, 0x7E};   
+//char SET={ // F - 0x7E, A - 0x03 ||0x01 , C - 0x03 || 0x07,//xor A C, 0x7E};   
 
 int main(int argc, char** argv)
 {
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
   /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) próximo(s) caracter(es)
+    leitura do(s) prï¿½ximo(s) caracter(es)
   */
 
     tcflush(fd, TCIOFLUSH);
@@ -107,8 +107,8 @@ int main(int argc, char** argv)
 	
 
   /* 
-    O ciclo FOR e as instruções seguintes devem ser alterados de modo a respeitar 
-    o indicado no guião 
+    O ciclo FOR e as instruï¿½ï¿½es seguintes devem ser alterados de modo a respeitar 
+    o indicado no guiï¿½o 
   */
 
 
