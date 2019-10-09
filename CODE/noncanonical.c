@@ -6,88 +6,119 @@
 #include <termios.h>
 #include <stdio.h>
 
+#include "utils.h"
+#include "error.h"
+
 #define BAUDRATE B9600
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
 
-volatile int STOP=FALSE;
+volatile int STOP = FALSE;
+unsigned char ua[] = {FLAG, A_3, UA, FLAG};
 
-int main(int argc, char** argv)
+unsigned char set[4];
+
+//init state machine
+instance_data_t machine = {start};
+
+int main(int argc, char **argv)
 {
-    int fd,c, res;
-    struct termios oldtio,newtio;
-    char buf[255];
+  int fd, c, res;
+  struct termios oldtio, newtio;
+  char buf[255];
 
-    if ( (argc < 2) || 
-  	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS1", argv[1])!=0) )) {
-      printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
-      exit(1);
-    }
-
+  if ((argc < 2) ||
+      ((strcmp("/dev/ttyS0", argv[1]) != 0) &&
+       (strcmp("/dev/ttyS1", argv[1]) != 0)))
+  {
+    printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
+    exit(1);
+  }
 
   /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
   */
-  
-    
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd <0) {perror(argv[1]); exit(-1); }
 
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
-      perror("tcgetattr");
-      exit(-1);
-    }
+  fd = open(argv[1], O_RDWR | O_NOCTTY);
+  if (fd < 0)
+  {
+    perror(argv[1]);
+    exit(-1);
+  }
 
-    bzero(&newtio, sizeof(newtio));
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
+  if (tcgetattr(fd, &oldtio) == -1)
+  { /* save current port settings */
+    perror("tcgetattr");
+    exit(-1);
+  }
 
-    /* set input mode (non-canonical, no echo,...) */
-    newtio.c_lflag = 0;
+  bzero(&newtio, sizeof(newtio));
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  newtio.c_oflag = 0;
 
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
+  /* set input mode (non-canonical, no echo,...) */
+  newtio.c_lflag = 0;
 
-
+  newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+  newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
 
   /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) próximo(s) caracter(es)
+    leitura do(s) prï¿½ximo(s) caracter(es)
   */
 
+  tcflush(fd, TCIOFLUSH);
 
+  if (tcsetattr(fd, TCSANOW, &newtio) == -1)
+  {
+    perror("tcsetattr");
+    exit(-1);
+  }
 
-    tcflush(fd, TCIOFLUSH);
+  printf("New termios structure set\n");
 
-    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-      perror("tcsetattr");
-      exit(-1);
+  //sending SET
+  while (TRUE)
+  { // ! nÃ£o sei bem como enquandrar o loop
+
+    if (read(fd, set, sizeof(set)) < 0)
+      exit(ERR_RD);
+
+    //check if response is valid
+    for (int i = 0; i < sizeof(set) / sizeof(char); i++) //!acho que e redundante
+    {
+      set_reception(&machine, set[i]);
     }
-
-    printf("New termios structure set\n");
-
-
-    while (STOP==FALSE) {       /* loop for input */
-      res = read(fd,buf,255);   /* returns after 5 chars have been input */
-      buf[res]=0;               /* so we can printf... */
-      printf(":%s:%d\n", buf, res);
-	  buf[res]='\0';
-	  write(fd,buf,sizeof(buf));
-      if (buf[0]=='z') STOP=TRUE;
+    if (machine.state == stop)
+    {
+      if (write(fd, set, sizeof(set)) > 0) //send set
+        exit(ERR_WR);
+      machine.state = start;
     }
+    else
+      machine.state = start;
+  }
 
+  while (STOP == FALSE)
+  {                           /* loop for input */
+    res = read(fd, buf, 255); /* returns after 5 chars have been input */
+    buf[res] = 0;             /* so we can printf... */
+    printf(":%s:%d\n", buf, res);
+    buf[res] = '\0';
+    write(fd, buf, sizeof(buf));
+    if (buf[0] == 'z')
+      STOP = TRUE;
+  }
 
   /* 
-    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião 
+    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guiï¿½o 
   */
 
-
-	sleep(1);
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-    return 0;
+  sleep(1);
+  tcsetattr(fd, TCSANOW, &oldtio);
+  close(fd);
+  return 0;
 }
