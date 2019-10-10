@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "utils.h"
 #include "error.h"
@@ -16,6 +18,7 @@
 #define FALSE 0
 #define TRUE 1
 
+//*GLOBALS
 volatile int STOP = FALSE;
 unsigned char set[5] = {FLAG, A_3, SET, A_3 ^ SET, FLAG};
 
@@ -83,14 +86,44 @@ int main(int argc, char **argv)
 
   printf("New termios structure set\n");
 
-  //SENDING SET
-  printf("Sending SET...\n");
-  res = write(fd, set, 5);
-  if (res < 0)
-    exit(ERR_WR);
+  //Install alarm
+  (void)signal(SIGALRM, alarm_handler);
 
-  
+  while (attempt < 4)
+  {
+    if (flag)
+    {
+      //SENDING SET
+      printf("Sending SET...\n");
+      res = write(fd, set, 5);
+      if (res < 0)
+        exit(ERR_WR);
 
+      alarm(3);
+      flag = 0;
+
+      printf("Receiving UA...\n");
+      for (int i = 0; i < 5; i++)
+      {
+        res = read(fd, &ua[i], 1);
+        ua_reception(&machine, ua[i]);
+        if (machine.state == stop)
+          printf("Succsefully passed UA\n");
+      }
+      if (machine.state == stop)
+      {
+        printf("Passei corretamente!\n");
+        break;
+      }
+    }
+    printf("Vou terminar");
+  }
+  /*
+   //SENDING SET
+    printf("Sending SET...\n");
+    res = write(fd, set, 5);
+    if (res < 0)
+      exit(ERR_WR);
   printf("Receiving UA...\n");
   //RECEIVING UA
   while (machine.state != stop)
@@ -103,10 +136,9 @@ int main(int argc, char **argv)
         printf("Succsefully passed UA\n");
     }
   }
-
+*/
   //PASS DATA
   /*testing*/
-  //alarm_set();
   printf("Type text to send: ");
 
   gets(buf);
