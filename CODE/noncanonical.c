@@ -14,109 +14,114 @@
 #define FALSE 0
 #define TRUE 1
 
-volatile int STOP=FALSE;
-unsigned char ua[5] = {FLAG, A_3, UA, A_3^UA,FLAG};
+volatile int STOP = FALSE;
+unsigned char ua[5] = {FLAG, A_3, UA, A_3 ^ UA, FLAG};
 
-instance_data_t machine = {start}; 
+instance_data_t machine = {start};
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-    int fd,c, res;
-    struct termios oldtio,newtio;
-    char buf[255];
-    char set[255]; //SET 
+  int fd, c, res;
+  struct termios oldtio, newtio;
+  char buf[255];
+  char set[255]; //SET
 
-    if ( (argc < 2) || 
-  	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
-  	      (strcmp("/dev/ttyS1", argv[1])!=0) )) {
-      printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
-      exit(1);
-    }
-
+  if ((argc < 2) ||
+      ((strcmp("/dev/ttyS0", argv[1]) != 0) &&
+       (strcmp("/dev/ttyS1", argv[1]) != 0)))
+  {
+    printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
+    exit(1);
+  }
 
   /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
   */
-  
-    
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd <0) {perror(argv[1]); exit(-1); }
 
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
-      perror("tcgetattr");
-      exit(-1);
-    }
+  fd = open(argv[1], O_RDWR | O_NOCTTY);
+  if (fd < 0)
+  {
+    perror(argv[1]);
+    exit(-1);
+  }
 
-    bzero(&newtio, sizeof(newtio));
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-    newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
+  if (tcgetattr(fd, &oldtio) == -1)
+  { /* save current port settings */
+    perror("tcgetattr");
+    exit(-1);
+  }
 
-    /* set input mode (non-canonical, no echo,...) */
-    newtio.c_lflag = 0;
+  bzero(&newtio, sizeof(newtio));
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  newtio.c_oflag = 0;
 
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
+  /* set input mode (non-canonical, no echo,...) */
+  newtio.c_lflag = 0;
 
-
+  newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+  newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
 
   /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) próximo(s) caracter(es)
+    leitura do(s) prï¿½ximo(s) caracter(es)
   */
 
+  tcflush(fd, TCIOFLUSH);
 
+  if (tcsetattr(fd, TCSANOW, &newtio) == -1)
+  {
+    perror("tcsetattr");
+    exit(-1);
+  }
 
-    tcflush(fd, TCIOFLUSH);
+  printf("New termios structure set\n");
 
-    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-      perror("tcsetattr");
-      exit(-1);
+  //RECEIVE  SET - AND CHECK
+  printf("Receiving SET...\n");
+  while (machine.state != stop)
+  {
+
+    for (int i = 0; i < 5; i++)
+    {
+      //printf("%d\n",i);
+      res = read(fd, &set[i], 1);
+      if (res < 0)
+        exit(ERR_RD);
+      set_reception(&machine, set[i]);
+      if (machine.state == stop)
+        printf("Succsefully passed SET\n");
     }
+  }
 
-    printf("New termios structure set\n");
+  //SEND UA
+  printf("Sending UA...\n");
+  res = write(fd, ua, 5);
+  if (res < 0)
+    exit(ERR_WR);
 
-    //RECEIVE  SET - AND CHECK 
-    printf("Receiving SET...\n");
-  //while(!(machine.state == stop)){}
-    for(int i=0;i<5; i++){
-        //printf("%d\n",i);
-        res = read(fd,&set[i],1);
-        if(res < 0) exit(ERR_RD);
-        printf("%c\n",set[i]);
-        set_reception(&machine,set[i]);
-        if(machine.state == stop)
-            printf("Succsefully passed SET\n"); 
-    }
-  
-     //SEND UA 
-    printf("Sending UA...\n");
-     res = write(fd,ua,5);
-     if(res<0)exit(ERR_WR);
+  printf("Receiving DATA...\n");
+  //PASS DATA
+  for (int i = 0;; i++)
+  {
+    res = read(fd, &buf[i], 1);
+    if (buf[i] == '\0')
+      break;
+  }
 
-    printf("Receiving DATA...\n");
-    //PASS DATA
-    for(int i = 0;; i++) {
-        res = read(fd,&buf[i],1);
-        if(buf[i] == '\0') break;
-    } 
-    
-    printf("message received - %s\n", buf);
+  printf("message received - %s\n", buf);
 
-    res = write(fd, buf,strlen(buf)+1); 
+  res = write(fd, buf, strlen(buf) + 1);
 
-    printf("Ressending - %s\n", buf); 
-
-
+  printf("Ressending - %s\n", buf);
 
   /* 
-    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião 
+    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guiï¿½o 
   */
 
-
-	sleep(1);
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-    return 0;
+  sleep(1);
+  tcsetattr(fd, TCSANOW, &oldtio);
+  close(fd);
+  return 0;
 }

@@ -2,6 +2,8 @@
 #include <signal.h>
 #include <stdio.h>
 
+#include "alarm.h"
+
 int flag = 1, conta = 1;
 
 void atende() // atende alarme
@@ -11,7 +13,7 @@ void atende() // atende alarme
    conta++;
 }
 
-main()
+void alarm_set()
 {
 
    (void)signal(SIGALRM, atende); // instala  rotina que atende interrupcao
