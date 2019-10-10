@@ -5,7 +5,7 @@
 #define A_3 0x03 // 0x03 comands sent by writer and reply by receiver //0x01 if reply sent by writer and comands by reader
 #define A_1 0x01
 #define SET 0x03
-#define UA 0x07
+#define UA  0x07
 //TODO make define to be used as array index
 
 typedef enum
@@ -24,15 +24,18 @@ typedef struct
 } instance_data_t;
 
 int set_reception(instance_data_t *machine, unsigned char pack)
-{
+{   
+    printf("checking stuff\n");
     switch (machine->state)
     {
     case (start):
+    printf("start\n");
         if (pack == FLAG)
             machine->state = flag_rcv;
         break;
     case (flag_rcv):
-        if (pack == A_1)
+printf("flag\n");
+        if (pack == A_3)
         {
             machine->state = a_rcv;
             break;
@@ -41,7 +44,8 @@ int set_reception(instance_data_t *machine, unsigned char pack)
             machine->state = start;
         break;
     case (a_rcv):
-        if (pack == 1)
+        printf("a\n");
+        if (pack == SET)
         {
             machine->state = c_rcv;
             break;
@@ -54,6 +58,7 @@ int set_reception(instance_data_t *machine, unsigned char pack)
         machine->state = start;
         break;
     case (c_rcv):
+        printf("c\n");
         if (pack == A_3 ^ SET)
         {
             machine->state = bcc_ok;
@@ -67,8 +72,10 @@ int set_reception(instance_data_t *machine, unsigned char pack)
         machine->state = start;
         break;
     case (bcc_ok):
-        if (pack == flag_rcv)
+        printf("bcc\n");
+        if (pack == FLAG)
         {
+            printf("stop\n");
             machine->state = stop;
             break;
         }

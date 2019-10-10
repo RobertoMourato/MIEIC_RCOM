@@ -6,18 +6,25 @@
 #include <termios.h>
 #include <stdio.h>
 
+#include "utils.h"
+#include "error.h"
+
 #define BAUDRATE B115200
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
 
 volatile int STOP=FALSE;
+unsigned char ua = {FLAG, A_3, UA, A_3^UA,FLAG};
+
+instance_data_t machine = {start}; 
 
 int main(int argc, char** argv)
 {
     int fd,c, res;
     struct termios oldtio,newtio;
     char buf[255];
+    char set[255]; //SET 
 
     if ( (argc < 2) || 
   	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
@@ -70,7 +77,22 @@ int main(int argc, char** argv)
 
     printf("New termios structure set\n");
 
+    //RECEIVE  SET - AND CHECK 
+  //while(!(machine.state == stop)){}
+    for(int i=0;i<5; i++){
+        //printf("%d\n",i);
+        res = read(fd,&set[i],1);
+        printf("%c\n",set[i]);
+        set_reception(&machine,set[i]);
+        if(machine.state == stop)
+            printf("Succsefully passed SET"); 
+    }
+        printf("%d\n",strlen(set));
+     //SEND UA 
+    
 
+    
+    //PASS DATA
     for(int i = 0;; i++) {
         res = read(fd,&buf[i],1);
         if(buf[i] == '\0') break;

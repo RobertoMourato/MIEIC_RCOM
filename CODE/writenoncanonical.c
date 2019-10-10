@@ -6,6 +6,10 @@
 #include <termios.h>
 #include <stdio.h>
 
+
+#include "utils.h"
+#include "error.h"
+
 #define BAUDRATE B115200 	
 #define MODEMDEVICE "/dev/ttyS1"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -13,6 +17,8 @@
 #define TRUE 1
 
 volatile int STOP=FALSE;
+unsigned char set[5]= {FLAG, A_3,SET,A_3^SET,FLAG};
+
 
 //char SET={}; // F - 0x7E, A - 0x03 ||0x01 , C - 0x03 || 0x07,//xor A C, 0x7E};   
 
@@ -61,7 +67,7 @@ int main(int argc, char** argv)
 
   /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
-    leitura do(s) prï¿½ximo(s) caracter(es)
+    leitura do(s) próximo(s) caracter(es)
   */
 
     tcflush(fd, TCIOFLUSH);
@@ -73,6 +79,14 @@ int main(int argc, char** argv)
 
     printf("New termios structure set\n");
 
+    //SENDING SET 
+    res = write(fd, set,5);
+    if(res <0) exit(ERR_WR);
+
+    //RECEIVING UA 
+
+
+    //PASS DATA
     /*testing*/
 	
 	printf("Type text to send: "); 
@@ -95,8 +109,8 @@ int main(int argc, char** argv)
 	printf("Received:%s\n",buf);   
 
   /* 
-    O ciclo FOR e as instruï¿½ï¿½es seguintes devem ser alterados de modo a respeitar 
-    o indicado no guiï¿½o 
+    O ciclo FOR e as instruções seguintes devem ser alterados de modo a respeitar 
+    o indicado no guião 
   */
 
 
