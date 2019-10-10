@@ -15,7 +15,7 @@
 #define TRUE 1
 
 volatile int STOP=FALSE;
-unsigned char ua = {FLAG, A_3, UA, A_3^UA,FLAG};
+unsigned char ua[5] = {FLAG, A_3, UA, A_3^UA,FLAG};
 
 instance_data_t machine = {start}; 
 
@@ -78,20 +78,24 @@ int main(int argc, char** argv)
     printf("New termios structure set\n");
 
     //RECEIVE  SET - AND CHECK 
+    printf("Receiving SET...\n");
   //while(!(machine.state == stop)){}
     for(int i=0;i<5; i++){
         //printf("%d\n",i);
         res = read(fd,&set[i],1);
+        if(res < 0) exit(ERR_RD);
         printf("%c\n",set[i]);
         set_reception(&machine,set[i]);
         if(machine.state == stop)
-            printf("Succsefully passed SET"); 
+            printf("Succsefully passed SET\n"); 
     }
-        printf("%d\n",strlen(set));
+  
      //SEND UA 
-    
+    printf("Sending UA...\n");
+     res = write(fd,ua,5);
+     if(res<0)exit(ERR_WR);
 
-    
+    printf("Receiving DATA...\n");
     //PASS DATA
     for(int i = 0;; i++) {
         res = read(fd,&buf[i],1);

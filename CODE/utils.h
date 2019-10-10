@@ -86,4 +86,67 @@ printf("flag\n");
     }
 }
 
+int ua_reception(instance_data_t *machine, unsigned char pack)
+{   
+    printf("checking stuff\n");
+    switch (machine->state)
+    {
+    case (start):
+    printf("start\n");
+        if (pack == FLAG)
+            machine->state = flag_rcv;
+        break;
+    case (flag_rcv):
+printf("flag\n");
+        if (pack == A_3)
+        {
+            machine->state = a_rcv;
+            break;
+        }
+        if (pack != FLAG)
+            machine->state = start;
+        break;
+    case (a_rcv):
+        printf("a\n");
+        if (pack == UA)
+        {
+            machine->state = c_rcv;
+            break;
+        }
+        if (pack == FLAG)
+        {
+            machine->state = flag_rcv;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (c_rcv):
+        printf("c\n");
+        if (pack == A_3 ^ UA)
+        {
+            machine->state = bcc_ok;
+            break;
+        }
+        if (pack == FLAG)
+        {
+            machine->state = flag_rcv;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (bcc_ok):
+        printf("bcc\n");
+        if (pack == FLAG)
+        {
+            printf("stop\n");
+            machine->state = stop;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (stop):
+        break;
+    }
+}
+
 #endif // UTILS_H_

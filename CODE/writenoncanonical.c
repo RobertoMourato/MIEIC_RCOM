@@ -19,14 +19,15 @@
 volatile int STOP=FALSE;
 unsigned char set[5]= {FLAG, A_3,SET,A_3^SET,FLAG};
 
-
-//char SET={}; // F - 0x7E, A - 0x03 ||0x01 , C - 0x03 || 0x07,//xor A C, 0x7E};   
+instance_data_t machine = {start};
 
 int main(int argc, char** argv)
 {
     int fd,c, res;
     struct termios oldtio,newtio;
     char buf[255];
+    char ua[255];
+
     int i, sum = 0, speed = 0;
     c=0;
     
@@ -80,10 +81,18 @@ int main(int argc, char** argv)
     printf("New termios structure set\n");
 
     //SENDING SET 
+    printf("Sending SET...\n");
     res = write(fd, set,5);
     if(res <0) exit(ERR_WR);
-
+    
+    printf("Receiving UA...\n");
     //RECEIVING UA 
+    for( int i=0; i<5; i++){
+        res = read(fd,&ua[i],1);    
+        set_reception(&machine,ua[i]);   
+        if(machine.state == stop)
+            printf("Succsefully passed UA\n"); 
+    }
 
 
     //PASS DATA
