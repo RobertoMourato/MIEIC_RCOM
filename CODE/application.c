@@ -14,69 +14,94 @@
 applicationLayer app;
 
 int main(void)
-{
+{   //run console UI
     interface();
     return 0;
 }
 
 int interface()
 {
-    char buf[255];
-    int openType = -1;
-    int option = -1;
-    int portNr = -1;
+    char buf[255]; //to read from console 
+    int openType = -1; //sender / receiver
+    int option = -1; //interface selector
+    int portNr = -1; //port number
 
-    printf("\n============================\n");
-    printf("Select option:\n");
-    printf("0 - llopen()\n");
-    printf("1 - llwrite/read()\n");
-    printf("2 - llclose()\n");
-    printf("============================\n\n");
-    printf("Type: ");
-    scanf("%s",buf);
-    option = atoi(buf);
-    //smth like a loop, inteface polling 
-    switch (option)
+    int open_flag = FALSE; //flag to know if port is oppended
+    int running_flag = TRUE; //flag to make program stop
+
+    //smth like a loop, inteface polling
+    while (running_flag)
     {
-    case 0:
+        //draw UI
+        printf("\n============================\n");
+        printf("Select option:\n");
+        printf("0 - llopen()\n");
+        printf("1 - llwrite/read()\n");
+        printf("2 - llclose()\n");
         printf("============================\n");
-        printf("Port number? ");
-        scanf("%s",buf);
-        portNr = atoi(buf);
-        if(portNr != 0 && portNr!= 1)
+        printf("Type: ");
+        //get UI option
+        scanf("%s", buf);
+        option = atoi(buf);
+
+        switch (option)
         {
-            printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
-            exit(ERR_PRT);
-        }
-        printf("\n0 - Transmiter/ 1 - Receiver: ");
-        scanf("%s",buf);
-        openType= atoi(buf);
-        if (openType != 0 && openType != 1)
-        {
-            printf("0 - TRANSMITTER/ 1 - RECEIVER!");
-            exit(ERR_ARGV2);
-        }
-        printf("============================\n\n");
-        if(openType == 0)
-            app.status = TRANSMITTER;
-        else  app.status = RECEIVER;
-        app.fileDescriptor = llopen(portNr,openType);
-        break;
-    case 1:
-        switch(app.status){
-            case(TRANSMITTER):
-            //llwrite(); 
+        case 0:
+            if (!open_flag)
+            {   
+                //enter port number
+                printf("============================\n");
+                printf("Port number? ");
+                scanf("%s", buf);
+                portNr = atoi(buf);
+                if (portNr != 0 && portNr != 1)
+                {
+                    printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
+                    exit(ERR_PRT);
+                }
+                //choose if transmotter or receiver 
+                printf("\n0 - Transmiter/ 1 - Receiver: ");
+                scanf("%s", buf);
+                openType = atoi(buf);
+                if (openType != 0 && openType != 1)
+                {
+                    printf("0 - TRANSMITTER/ 1 - RECEIVER!");
+                    exit(ERR_ARGV2);
+                }
+                printf("============================\n\n");
+                //save app status
+                if (openType == 0)
+                    app.status = TRANSMITTER;
+                else
+                    app.status = RECEIVER;
+                //do llopen and store on descripter
+                app.fileDescriptor = llopen(portNr, openType);
+                if(app.fileDescriptor < 0 )
+                    exit(ERR_LLOPEN);
+                //set port as oppenned
+                open_flag = TRUE;
+            }
+            else
+                printf("Connection has already been oppened...");
             break;
+        case 1:
+            switch (app.status)
+            {
+            case (TRANSMITTER):
+                //llwrite();
+                break;
             case (RECEIVER):
-            //llread();
+                //llread();
+                break;
+            }
+            break;
+        case 2:
+            if(llclose(app.fileDescriptor) > 0){
+                printf("Port sucssefully closed!");
+                running_flag = FALSE; //i dont know if it is suppose the program to end ask later
+            }else printf("Port didnt close!");
             break;
         }
-        break;
-    case 2:
-
-        //llopen
-
-        break;
     }
 
     return 0;

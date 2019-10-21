@@ -13,13 +13,13 @@
 #define MAX_SIZE 1
 
 //port definitions data
-
 typedef struct
 {
     int fileDescriptor;
     int status;
 } applicationLayer;
 
+//layer definitions
 typedef struct
 {
     char port[20];
@@ -30,6 +30,7 @@ typedef struct
     char frame[MAX_SIZE];          /*Trama*/
 }linkLayer;
 
+//state machine states
 typedef enum {
     start,
     flag_rcv,
@@ -39,13 +40,23 @@ typedef enum {
     stop
 } state_t;
 
+//state machine store
 typedef struct
 {
     state_t state;
 } instance_data_t;
 
+/**
+ * @brief set reception state machine 
+ * @param mahchine get machine current state 
+ * @param pack byte to check 
+ */
 void set_reception(instance_data_t *machine, unsigned char pack);
-
+/**
+ * @brief ua reception state machine 
+ * @param mahchine get machine current state 
+ * @param pack byte to check 
+ */
 void ua_reception(instance_data_t *machine, unsigned char pack);
 
 #endif // UTILS_H_

@@ -8,4 +8,6 @@
 #define ERR_PRT 4 //error inputting port
 #define ERR_ARGV2 5 //error inputting port
 
+#define ERR_LLOPEN 6 //error with llopen funtion
+
 #endif //ERROR_H_
