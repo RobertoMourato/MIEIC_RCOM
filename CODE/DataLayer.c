@@ -16,22 +16,32 @@
 linkLayer linkLayerSettings;
 
 //*GLOBALS
+//Frames (S)(U)
 unsigned char set[5] = {FLAG, A_3, SET, A_3 ^ SET, FLAG};
 unsigned char ua[5] = {FLAG, A_3, UA, A_3 ^ UA, FLAG};
+unsigned char disc[5] = {FLAG, A_3, DISC, A_3 ^ DISC, FLAG};
+unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
+unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
+
+int portState;
+
 struct termios oldtio;
-//set Layer values 
-instance_data_t machineOpen = {start};
+//set Layer values
+supervision_instance_data_t machineOpenTransmitter = {start};
+supervision_instance_data_t machineOpenReceiver = {start};
+supervision_instance_data_t machineCloseTransmitter = {start};
+supervision_instance_data_t machineCloseReceiver = {start};
 
 //TRANSMITTER | RECEIVER
 int llopen(int port, int type)
 {
-    int fd,res;
+    int fd, res;
     struct termios newtio;
     char buf[255];
     char portStr[20] = "/dev/ttyS"; //to append to the port number
-    char portNr=  port +'0';
+    char portNr = port + '0';
     puts(&portNr);
-    strcat(portStr,&portNr);
+    strcat(portStr, &portNr);
 
     /*
     Open serial port device for reading and writing and not as controlling tty
@@ -59,8 +69,8 @@ int llopen(int port, int type)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 0;  /* blocking read until 5 chars received */
+    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
 
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -81,12 +91,13 @@ int llopen(int port, int type)
     {
     case TRANSMITTER:
         //Install alarm
+        portState = TRANSMITTER;
         (void)signal(SIGALRM, alarm_handler);
 
         while (attempt < 4)
         {
             if (flag)
-            {
+            {   
                 //SENDING SET
                 printf("Sending SET...\n");
                 res = write(fd, set, 5);
@@ -100,11 +111,11 @@ int llopen(int port, int type)
                 for (int i = 0; i < 5; i++)
                 {
                     res = read(fd, &buf[i], 1);
-                    ua_reception(&machineOpen, buf[i]);
-                    if (machineOpen.state == stop)
+                    ua_reception(&machineOpenTransmitter, buf[i]);
+                    if (machineOpenTransmitter.state == stop)
                         printf("Succsefully passed UA\n");
                 }
-                if (machineOpen.state == stop)
+                if (machineOpenTransmitter.state == stop)
                 {
                     printf("Passei corretamente!\n");
                     break;
@@ -114,16 +125,17 @@ int llopen(int port, int type)
         break;
     case RECEIVER:
         //RECEIVE  SET - AND CHECK
+        portState = RECEIVER;
         printf("Receiving SET...\n");
-        while (machineOpen.state != stop)
+        while (machineOpenReceiver.state != stop)
         {
             for (int i = 0; i < 5; i++)
             {
                 res = read(fd, &buf[i], 1);
                 if (res < 0)
                     exit(ERR_RD);
-                set_reception(&machineOpen, buf[i]);
-                if (machineOpen.state == stop)
+                set_reception(&machineOpenReceiver, buf[i]);
+                if (machineOpenReceiver.state == stop)
                     printf("Succsefully passed SET\n");
             }
         }
@@ -147,14 +159,86 @@ int llread(int fd, char *buffer);
 
 int llclose(int fd)
 {
-    //SEND RCV DISC SEND UA ACK
+    int res;
+    char buf[255];
+    switch (portState)
+    {
+    case (TRANSMITTER):
+
+        (void)signal(SIGALRM, alarm_handler);
+
+        while (attempt < 4)
+        {
+            if (flag)
+            {
+                //Send DISC
+                printf("Sending DISC...\n");
+                res = write(fd, disc, 5);
+                if (res < 0)
+                    exit(ERR_WR);
+
+                alarm(3);
+                flag = 0;
+
+                //WAIT FOR DISC ACK
+                printf("Receiving RECEIVER DISC...\n");
+                for (int i = 0; i < 5; i++)
+                {
+                    res = read(fd, &buf[i], 1);
+                    disc_reception(&machineCloseTransmitter, buf[i]);
+                    if (machineCloseTransmitter.state == stop)
+                        printf("Succsefully passed DISC\n");
+                }
+                //SEND UA
+                printf("Sending UA...\n");
+                res = write(fd, disc, 5);
+                if (res < 0)
+                    exit(ERR_WR);
+                break;
+            }
+        }
+        break;
+
+    case (RECEIVER):
+
+        //READ DISC
+        printf("Reading DISC...\n");
+        for (int i = 0; i < 5; i++)
+        {
+            res = read(fd, &buf[i], 1);
+            disc_reception(&machineCloseReceiver, buf[i]);
+            if (machineCloseReceiver.state == stop)
+                printf("Succsefully passed DISC\n");
+        }
+        //SEND DISC
+        res = write(fd, disc, 5);
+        if (res < 0)
+            exit(ERR_WR);
+
+        //reset machine
+        machineCloseReceiver.state = start;
+
+        //READ UA
+        printf("Reading UA...\n");
+        for (int i = 0; i < 5; i++)
+        {
+            res = read(fd, &buf[i], 1);
+            ua_reception(&machineCloseReceiver, buf[i]);
+            if (machineCloseReceiver.state == stop)
+                printf("Succsefully passed UA\n");
+        }
+
+        break;
+    }
+
     sleep(1);
+    //disconnect port
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
     {
         perror("tcsetattr");
-        exit(-1);
+        return -1;
     }
 
     close(fd);
-    return 0;
+    return 1;
 }

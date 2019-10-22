@@ -5,10 +5,13 @@
 #define RECEIVER 1
 
 #define FLAG 0x7E
-#define A_3 0x03 // 0x03 comands sent by writer and reply by receiver //0x01 if reply sent by writer and comands by reader
-#define A_1 0x01
+#define A_3 0x03 // 0x03 comands sent by writer and reply by receiver 
+#define A_1 0x01 //0x01 if reply sent by writer and comands by receiver
 #define SET 0x03
 #define UA 0x07
+#define DISC 0x0B
+#define RR 0x03 //check what R on slides means
+#define REJ 0x01  //check what R on slides means 
 
 #define MAX_SIZE 1
 
@@ -38,25 +41,31 @@ typedef enum {
     c_rcv,
     bcc_ok,
     stop
-} state_t;
+} supervision_state_t;
 
 //state machine store
 typedef struct
 {
-    state_t state;
-} instance_data_t;
+    supervision_state_t state;
+} supervision_instance_data_t;
 
 /**
  * @brief set reception state machine 
- * @param mahchine get machine current state 
+ * @param machine get machine current state 
  * @param pack byte to check 
  */
-void set_reception(instance_data_t *machine, unsigned char pack);
+void set_reception(supervision_instance_data_t *machine, unsigned char pack);
 /**
  * @brief ua reception state machine 
- * @param mahchine get machine current state 
+ * @param machine get machine current state 
  * @param pack byte to check 
  */
-void ua_reception(instance_data_t *machine, unsigned char pack);
+void ua_reception(supervision_instance_data_t *machine, unsigned char pack);
+/**
+ * @brief disc reception state machine 
+ * @param machine get machine current state 
+ * @param pack byte to check 
+ */
+void disc_reception(supervision_instance_data_t *machine, unsigned char pack);
 
 #endif // UTILS_H_

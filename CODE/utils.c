@@ -9,7 +9,7 @@
 #include "error.h"
 
 
-void set_reception(instance_data_t *machine, unsigned char pack)
+void set_reception(supervision_instance_data_t *machine, unsigned char pack)
 {
     switch (machine->state)
     {
@@ -65,12 +65,11 @@ void set_reception(instance_data_t *machine, unsigned char pack)
     }
 }
 
-void ua_reception(instance_data_t *machine, unsigned char pack)
+void ua_reception(supervision_instance_data_t *machine, unsigned char pack)
 {
     switch (machine->state)
     {
     case (start):
-        printf("start\n");
         if (pack == FLAG)
             machine->state = flag_rcv;
         break;
@@ -110,6 +109,66 @@ void ua_reception(instance_data_t *machine, unsigned char pack)
         machine->state = start;
         break;
     case (bcc_ok):
+        if (pack == FLAG)
+        {
+            machine->state = stop;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (stop):
+        break;
+    }
+}
+
+void disc_reception(supervision_instance_data_t *machine, unsigned char pack){
+    switch (machine->state)
+    {
+    case (start):
+    printf("start");
+        if (pack == FLAG)
+            machine->state = flag_rcv;
+        break;
+    case (flag_rcv):
+    printf("flag");
+        if (pack == A_3)
+        {
+            machine->state = a_rcv;
+            break;
+        }
+        if (pack != FLAG)
+            machine->state = start;
+        break;
+    case (a_rcv):
+    printf("a");
+        if (pack == DISC)
+        {
+            machine->state = c_rcv;
+            break;
+        }
+        if (pack == FLAG)
+        {
+            machine->state = flag_rcv;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (c_rcv):
+    printf("c");
+        if (pack == (A_3 ^ DISC))
+        {
+            machine->state = bcc_ok;
+            break;
+        }
+        if (pack == FLAG)
+        {
+            machine->state = flag_rcv;
+            break;
+        }
+        machine->state = start;
+        break;
+    case (bcc_ok):
+    printf("bcc");
         if (pack == FLAG)
         {
             machine->state = stop;

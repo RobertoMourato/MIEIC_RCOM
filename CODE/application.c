@@ -104,6 +104,7 @@ int interface()
         }
     }
 
+    printf("\nProgram sucssefully ended.\n");
     return 0;
 }
 //return -1 error or port case succeeded
