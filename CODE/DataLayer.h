@@ -1,12 +1,6 @@
 #ifndef DATALAYER_H_
 #define DATALAYER_H_
 
-#define BAUDRATE B115200
-#define MODEMDEVICE "/dev/ttyS1"
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
-#define FALSE 0
-#define TRUE 1
-
 /**
  * @brief open serial port
  * @param port get port number in /dev/ttySX where X is the port received

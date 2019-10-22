@@ -87,7 +87,13 @@ int interface()
         case 1:
             switch (app.status)
             {
+                char path[255];
+
             case (TRANSMITTER):
+                printf("Enter file path to read: ");
+                scanf("%s", path);
+
+
                 //llwrite();
                 break;
             case (RECEIVER):

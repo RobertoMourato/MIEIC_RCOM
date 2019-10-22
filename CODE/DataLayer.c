@@ -13,15 +13,15 @@
 #include "DataLayer.h"
 #include "alarm.h"
 
-linkLayer linkLayerSettings;
 
 //*GLOBALS
+linkLayer layerPressets; 
 //Frames (S)(U)
 unsigned char set[5] = {FLAG, A_3, SET, A_3 ^ SET, FLAG};
 unsigned char ua[5] = {FLAG, A_3, UA, A_3 ^ UA, FLAG};
 unsigned char disc[5] = {FLAG, A_3, DISC, A_3 ^ DISC, FLAG};
-unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
-unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
+//unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
+//unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
 
 int portState;
 
@@ -42,7 +42,8 @@ int llopen(int port, int type)
     char portNr = port + '0';
     puts(&portNr);
     strcat(portStr, &portNr);
-
+    //set layer pressets using flags defined
+    setLinkLayer(&layerPressets,portStr);
     /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
@@ -94,7 +95,7 @@ int llopen(int port, int type)
         portState = TRANSMITTER;
         (void)signal(SIGALRM, alarm_handler);
 
-        while (attempt < 4)
+        while (attempt < layerPressets.numTransmissions)
         {
             if (flag)
             {   
@@ -104,7 +105,7 @@ int llopen(int port, int type)
                 if (res < 0)
                     exit(ERR_WR);
 
-                alarm(3);
+                alarm(layerPressets.timeout);
                 flag = 0;
 
                 printf("Receiving UA...\n");
@@ -149,7 +150,6 @@ int llopen(int port, int type)
     }
 
     //make structure
-
     return fd;
 }
 
@@ -167,7 +167,7 @@ int llclose(int fd)
 
         (void)signal(SIGALRM, alarm_handler);
 
-        while (attempt < 4)
+        while (attempt < layerPressets.numTransmissions)
         {
             if (flag)
             {
@@ -177,7 +177,7 @@ int llclose(int fd)
                 if (res < 0)
                     exit(ERR_WR);
 
-                alarm(3);
+                alarm(layerPressets.timeout);
                 flag = 0;
 
                 //WAIT FOR DISC ACK

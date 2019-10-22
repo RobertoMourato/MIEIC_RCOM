@@ -4,10 +4,19 @@
 #include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils.h"
 #include "error.h"
+#include "DataLayer.h"
 
+void setLinkLayer(linkLayer *linkLayer,char port[]){
+    strcpy(linkLayer->port,port);
+    linkLayer->baudRate = BAUDRATE;
+    linkLayer->sequenceNumber = SEQNUM; //TODO put smth here that i dont know 
+    linkLayer->timeout = TIMEOUT;
+    linkLayer->numTransmissions = ATEMPTS;
+}
 
 void set_reception(supervision_instance_data_t *machine, unsigned char pack)
 {
