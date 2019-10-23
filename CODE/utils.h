@@ -17,6 +17,10 @@
 #define REJ0 0x01  
 #define RR1 0x83  
 #define REJ1 0x81 
+
+#define C1 0x01
+#define C2 0x02
+#define C3 0x03
 #define T1 0x00
 #define T2 0x01
 

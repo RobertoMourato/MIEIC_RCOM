@@ -29,10 +29,10 @@ char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLe
     char c; 
     switch(type){
         case(START):
-            c= 0x02;
+            c= C2;
         break;
         case(END):
-            c= 0x03;
+            c= C3;
         break;
     }
     controlPacket[0] = c;  //C
@@ -51,7 +51,7 @@ char * makeDatePacket(char data[],int *dataPackLen){
     *dataPackLen = 6 + strlen(data); // C+N+L2+L1+P1+P2
     char * dataPacket = (char *)malloc( *dataPackLen);
 
-    dataPacket[0]= 0x01;
+    dataPacket[0]= C1;
     dataPacket[1]= 0x01; //N – número de sequência (módulo 255)
     dataPacket[2]= 0x01; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
     dataPacket[3]= 0x01; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
