@@ -11,4 +11,10 @@ void alarm_handler(/*int signo*/)
     attempt++;
 }
 
+void turnoff_alarm(){
+    alarm(0);
+    flag = 1;
+    attempt = 1;
+}
+
 #endif //ALARM_H_

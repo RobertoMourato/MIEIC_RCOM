@@ -13,9 +13,8 @@
 #include "DataLayer.h"
 #include "alarm.h"
 
-
 //*GLOBALS
-linkLayer layerPressets; 
+linkLayer layerPressets;
 //Frames (S)(U)
 unsigned char set[5] = {FLAG, A_3, SET, A_3 ^ SET, FLAG};
 unsigned char ua[5] = {FLAG, A_3, UA, A_3 ^ UA, FLAG};
@@ -43,7 +42,7 @@ int llopen(int port, int type)
     puts(&portNr);
     strcat(portStr, &portNr);
     //set layer pressets using flags defined
-    setLinkLayer(&layerPressets,portStr);
+    setLinkLayer(&layerPressets, portStr);
     /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
@@ -70,8 +69,8 @@ int llopen(int port, int type)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
+    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 0;  /* blocking read until 5 chars received */
 
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -98,7 +97,7 @@ int llopen(int port, int type)
         while (attempt < layerPressets.numTransmissions)
         {
             if (flag)
-            {   
+            {
                 //SENDING SET
                 printf("Sending SET...\n");
                 res = write(fd, set, 5);
@@ -118,6 +117,7 @@ int llopen(int port, int type)
                 }
                 if (machineOpenTransmitter.state == stop)
                 {
+                    turnoff_alarm();
                     printf("Passei corretamente!\n");
                     break;
                 }
@@ -137,7 +137,9 @@ int llopen(int port, int type)
                     exit(ERR_RD);
                 set_reception(&machineOpenReceiver, buf[i]);
                 if (machineOpenReceiver.state == stop)
+                {
                     printf("Succsefully passed SET\n");
+                }
             }
         }
 
@@ -153,7 +155,35 @@ int llopen(int port, int type)
     return fd;
 }
 
-int llwrite(int fd, char *buffer, int length);
+int llwrite(int fd, char *buffer, int length){
+    
+    int res; 
+    //char buf[255] to write from!
+
+    //TODO tuff bytes 
+    //TODO add FH to buffer received
+    
+    //install alarm 
+    (void)signal(SIGALRM, alarm_handler);
+
+    while(attempt < layerPressets.numTransmissions){
+        if(flag){
+            res = write(fd,buffer,length);
+            if( res < 0){
+                printf("Error writting to port!\n");
+                return -1;
+            }
+            alarm(layerPressets.timeout);
+            //read the ACK or NACK choose what to do!
+        }
+    }
+    //write to port 
+
+
+    printf("ola");
+    
+    return 0; //if sucessful 
+}
 
 int llread(int fd, char *buffer);
 
@@ -161,6 +191,11 @@ int llclose(int fd)
 {
     int res;
     char buf[255];
+    int flag = TRUE;
+
+    //flush
+    tcflush(fd, TCIOFLUSH);
+
     switch (portState)
     {
     case (TRANSMITTER):
@@ -187,15 +222,18 @@ int llclose(int fd)
                     res = read(fd, &buf[i], 1);
                     disc_reception(&machineCloseTransmitter, buf[i]);
                     if (machineCloseTransmitter.state == stop)
+                    {
+                        turnoff_alarm();
                         printf("Succsefully passed DISC\n");
+                        //SEND UA
+                        break;
+                    }
                 }
-                //SEND UA
-                printf("Sending UA...\n");
-                res = write(fd, disc, 5);
-                if (res < 0)
-                    exit(ERR_WR);
-                break;
             }
+            printf("Sending UA...\n");
+            res = write(fd, disc, 5);
+            if (res < 0)
+                exit(ERR_WR);
         }
         break;
 

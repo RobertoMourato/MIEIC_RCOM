@@ -3,6 +3,8 @@
 
 #define TRANSMITTER 0
 #define RECEIVER 1
+#define START 0
+#define END 1
 
 //BIT FLAGS
 #define FLAG 0x7E
@@ -15,6 +17,8 @@
 #define REJ0 0x01  
 #define RR1 0x83  
 #define REJ1 0x81 
+#define T1 0x00
+#define T2 0x01
 
 //PORT SETTINGS
 #define BAUDRATE B115200
@@ -22,7 +26,7 @@
 #define SEQNUM 0
 #define TIMEOUT 3
 #define ATEMPTS 3
-#define MAX_SIZE 1
+#define MAX_SIZE 1024
 
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
@@ -67,6 +71,24 @@ typedef struct
  * @param linkLayer linklayer to make
  */
 void setLinkLayer(linkLayer *linklayer,char port[]);
+
+/**
+ * @brief make control packet 
+ * @param type  0 - start 1 - end 
+ * @param path filename path 
+ * @param size size of the file 
+ * @param controlPackLen length of the control pack made
+ * @return char * with control packet
+ */
+char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
+
+/**
+ * @brief make control packet 
+ * @param path filename path 
+ * @param controlPackLen length of the control pack made
+ * @return char * with control packet
+ */
+char * makeDatePacket(char data[],int *dataPackLen);
 
 /**
  * @brief set reception state machine 

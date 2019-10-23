@@ -4,6 +4,8 @@
 #include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "utils.h"
 #include "error.h"
@@ -12,6 +14,7 @@
 
 //GLOBALS
 applicationLayer app;
+
 
 int main(void)
 {   //run console UI
@@ -86,17 +89,93 @@ int interface()
             break;
         case 1:
             switch (app.status)
-            {
+            {                   
+                //vars 
+                int res;
                 char path[255];
+                struct stat metadata; 
+                FILE *f;
+                unsigned char *fileData;
+
+                char *controlPack;
 
             case (TRANSMITTER):
+            
+                //UI
+                printf("============================\n");
                 printf("Enter file path to read: ");
+                
+                //aplication level, has to read the file, split the file, make the frames and set packet header 
                 scanf("%s", path);
+                printf(" size: %ld\n",strlen(path));
+                
+                //open file 
+                f = fopen(path,"rb");
+                if(f == NULL ){
+                    printf("Error opening image!\n");
+                    return -1;
+                }
+                //get img size value 
+                stat(path, &metadata);
+                printf("This file has %ld bytes \n", metadata.st_size);
+                //alloc memory to store the image 
+                fileData = (unsigned char *)malloc(metadata.st_size);
+                res = fread(fileData, sizeof(unsigned char ),metadata.st_size,f);
+                if(res < 0){
+                    printf("Error reading file!\n");
+                }else printf("File read has %d coiso\n ",res);
+                    
+                //close file
+                res = fclose(f);
+                if(res != 0 ){
+                    printf("Error closing file!\n");
+                    return -1;
+                }
+                
+                printf("res: %d\n", ((int) metadata.st_size)/MAX_SIZE);
+                //send PH Data start    
+                int controlPackSize=0;
+                controlPack = makeControlPacket(START,path,metadata.st_size,&controlPackSize);
+                printf("size %d\n",controlPackSize);
+                if(llwrite(app.fileDescriptor,controlPack,controlPackSize) == -1){
+                    printf("Error writting start control packet");
+                    return -1; 
+                }
 
+                //while splitting the file 
+                for(int i =0; i <  ((int) metadata.st_size)/MAX_SIZE+1; i++){
+                    //split data to send 
+                    char *tmpPack; 
+                    tmpPack = (char *)malloc(MAX_SIZE);
+                    for( int j = 0 ; j <= MAX_SIZE; j++ ){
+                        tmpPack[j]= fileData[i*MAX_SIZE+j];
+                    }
+                    int  dataPackSize = 0;
+                    char * dataPack = makeDatePacket(tmpPack,&dataPackSize);
+                    if(llwrite(app.fileDescriptor,dataPack,dataPackSize) == -1){ //wait for the return value
+                        printf("Error writting mid control packet");
+                        return -1; 
+                    }
+                }
+                //send PH Data start
+                controlPackSize=0;
+                controlPack = makeControlPacket(END,path,metadata.st_size,&controlPackSize);
+                printf("size %d\n",controlPackSize);
+                if(llwrite(app.fileDescriptor,controlPack,controlPackSize) == -1){
+                    printf("Error writting start control packet");
+                    return -1; 
+                }
+                //if any of this fails, process will end
 
-                //llwrite();
                 break;
             case (RECEIVER):
+                //remove nd read flags created on the case before and store the date on a file
+                int eof = FALSE; 
+                
+
+                while(!eof){
+                    //keep reading until gets...
+                }
                 //llread();
                 break;
             }
