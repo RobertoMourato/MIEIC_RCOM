@@ -189,3 +189,32 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack){
         break;
     }
 }
+
+
+unsigned char BCC_make(char * buffer, int size)
+{
+    unsigned char BCC;
+    BCC = buffer[0];
+    for(int i = 1; i < size; i++)
+    {
+        BCC = BCC^buffer[i];
+    }
+    return BCC;
+}
+
+unsigned char * BCC_stuffing(unsigned char BCC)
+{
+    unsigned char * BCC_stuffed;
+    if(BCC == ESC)
+    {
+        BCC_stuffed[0] = ESC;
+        BCC_stuffed[1] = ESC_NEXT;
+    }
+    else if(BCC == FLAG)
+    {
+        BCC_stuffed[0] = ESC;
+        BCC_stuffed[1] = FLAG_NEXT;
+    }
+    return BCC_stuffed;
+
+}
