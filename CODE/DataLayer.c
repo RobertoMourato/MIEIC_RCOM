@@ -22,6 +22,8 @@ unsigned char disc[5] = {FLAG, A_3, DISC, A_3 ^ DISC, FLAG};
 //unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
 //unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
 
+int num_frame = 0;
+
 int portState;
 
 struct termios oldtio;
@@ -154,7 +156,7 @@ int llopen(int port, int type)
     //make structure
     return fd;
 }
-
+//*VERSAO ANTIGA - FUCNIONAL MAS BASICA
 int llwrite(int fd, char *buffer, int length){
     
     int res; 
@@ -183,6 +185,112 @@ int llwrite(int fd, char *buffer, int length){
     printf("ola");
     
     return 0; //if sucessful 
+//*PROTIPO DO ANDY 
+int llwrite(int fd, char *buffer, int length);
+{
+    unsigned char BCC_data;
+    unsigned char * BCC_data_stuffed;
+    unsigned char * data_frame;
+    BCC_data = BCC_make(buffer, size);
+    BCC_data_stuffed = BCC_stuffing(BCC);
+
+    data_frame[0] = FLAG;
+    data_frame[1] = A_3;
+    
+    if(num_frame == 0)
+    {
+        data_frame[2] = NS_0;
+    }
+    else
+    {
+        data_frame[2] = NS_1;
+    }
+
+    data_frame[3] = (A_3^data_frame[2]);
+
+    int inside_temp = 0;
+    unsigned char * temp;
+    for(int i = 0; i < length; i++)
+  {
+    
+    if(buffer[i] == FLAG )     //byte stuffing
+    {
+      buffer[i] = ESC;
+      for(int num_save_temp = i+1; i < size; num_save_temp++ )
+      {
+        
+        temp[inside_temp] = buffer[num_save_temp];
+        inside_temp++;
+
+      }
+
+      buffer[i+1] = FLAG_NEXT;
+
+      int new_pos = i+2;
+
+      for(int num_move = 0; num_move < inside_temp)
+      {
+          buffer[new_ pos] = temp[num_move];
+          new_pos++;
+      }
+
+      inside_temp = 0;
+
+      
+      
+      i = i+2;
+    }
+    else if(buffer[i] == ESC)
+    {
+      buffer[i] = ESC;
+      for(int num_save_temp = i+1; i < size; num_save_temp++ )
+      {
+        
+        temp[inside_temp] = buffer[num_save_temp];
+        inside_temp++;
+
+      }
+
+      buffer[i+1] = ESC_NEXT;
+
+      int new_pos = i+2;
+
+      for(int num_move = 0; num_move < inside_temp)
+      {
+          buffer[new_ pos] = temp[num_move];
+          new_pos++;
+      }
+      
+      inside_temp = 0;
+
+      
+      
+      i = i+2;
+    } 
+    else
+    {
+        data_frame[i+4] = buffer[i];   
+    }
+    
+  }
+  if(strlen(BCC_stuffed) == 1)
+  {
+      data_frame[strlen(data_frame)+1] = BCC;
+  }
+  else if(strlen(BCC_stuffed)== 2)
+  {
+      data_frame[strlen(data_frame)+1] = BCC_stuffed[0];
+      data_frame[strlen(data_frame)+1] = BCC_stuffed[1];
+  }
+
+  data_frame[strlen(data_frame)+1] = FLAG;
+
+
+  write(fd, data_frame, sizeof(data_frame));
+        
+    
+    
+    
 }
 
 int llread(int fd, char *buffer);

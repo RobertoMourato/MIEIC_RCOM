@@ -8,6 +8,11 @@
 
 //BIT FLAGS
 #define FLAG 0x7E
+#define ESC 0x7D
+#define FLAG_NEXT 0x5E
+#define ESC_NEXT 0x5D
+#define NS_0 0x00
+#define NS_1 0x40
 #define A_3 0x03 // 0x03 comands sent by writer and reply by receiver 
 #define A_1 0x01 //0x01 if reply sent by writer and comands by receiver
 #define SET 0x03
@@ -70,6 +75,8 @@ typedef struct
     supervision_state_t state;
 } supervision_instance_data_t;
 
+
+
 /**
  * @brief set linklayer data 
  * @param linkLayer linklayer to make
@@ -112,6 +119,10 @@ void ua_reception(supervision_instance_data_t *machine, unsigned char pack);
  * @param pack byte to check 
  */
 void disc_reception(supervision_instance_data_t *machine, unsigned char pack);
+
+unsigned char BCC_make(char * buffer, int size);
+
+unsigned char* BCC_stuffing(unsigned char BCC);
 
 
 #endif // UTILS_H_
