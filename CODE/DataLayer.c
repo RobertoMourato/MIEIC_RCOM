@@ -156,45 +156,18 @@ int llopen(int port, int type)
     //make structure
     return fd;
 }
-//*VERSAO ANTIGA - FUCNIONAL MAS BASICA
-int llwrite(int fd, char *buffer, int length){
-    
-    int res; 
-    //char buf[255] to write from!
-
-    //TODO tuff bytes 
-    //TODO add FH to buffer received
-    
-    //install alarm 
-    (void)signal(SIGALRM, alarm_handler);
-
-    while(attempt < layerPressets.numTransmissions){
-        if(flag){
-            res = write(fd,buffer,length);
-            if( res < 0){
-                printf("Error writting to port!\n");
-                return -1;
-            }
-            alarm(layerPressets.timeout);
-            //read the ACK or NACK choose what to do!
-        }
-    }
-    //write to port 
 
 
-    printf("ola");
-    
-    return 0; //if sucessful 
-}
-/*
 //PROTIPO DO ANDY 
-int llwrite(int fd, char *buffer, int length);
+int llwrite(int fd, char *buffer, int length)
 {
+    int res;
     unsigned char BCC_data;
-    unsigned char * BCC_data_stuffed;
-    unsigned char * data_frame;
-    BCC_data = BCC_make(buffer, size);
-    BCC_data_stuffed = BCC_stuffing(BCC);
+    int data_frame_size = length + 6;
+    unsigned char * BCC_data_stuffed = (unsigned char *) malloc((sizeof(unsigned char))*2);
+    unsigned char * data_frame = (unsigned char *) malloc((sizeof(unsigned char))* data_frame_size);
+    BCC_data = BCC_make(buffer, length);
+    BCC_data_stuffed = BCC_stuffing(BCC_data);
 
     data_frame[0] = FLAG;
     data_frame[1] = A_3;
@@ -210,91 +183,72 @@ int llwrite(int fd, char *buffer, int length);
 
     data_frame[3] = (A_3^data_frame[2]);
 
-    int inside_temp = 0;
-    unsigned char * temp;
+    int data_frame_inside_counter = 4;
     for(int i = 0; i < length; i++)
   {
     
-    if(buffer[i] == FLAG )     //byte stuffing
+    if(buffer[i] == ESC )     //byte stuffing
     {
-      buffer[i] = ESC;
-      for(int num_save_temp = i+1; i < size; num_save_temp++ )
-      {
-        
-        temp[inside_temp] = buffer[num_save_temp];
-        inside_temp++;
+      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char*))*(data_frame_size++));  
+      data_frame[data_frame_inside_counter] = ESC;
+      data_frame[data_frame_inside_counter + 1] = ESC_NEXT;
 
-      }
-
-      buffer[i+1] = FLAG_NEXT;
-
-      int new_pos = i+2;
-
-      for(int num_move = 0; num_move < inside_temp)
-      {
-          buffer[new_ pos] = temp[num_move];
-          new_pos++;
-      }
-
-      inside_temp = 0;
-
-      
-      
-      i = i+2;
+      data_frame_inside_counter++;
+      data_frame_inside_counter++;
     }
-    else if(buffer[i] == ESC)
+    else if(buffer[i] == FLAG)
     {
-      buffer[i] = ESC;
-      for(int num_save_temp = i+1; i < size; num_save_temp++ )
-      {
-        
-        temp[inside_temp] = buffer[num_save_temp];
-        inside_temp++;
+      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char*))*(data_frame_size++));  
+      data_frame[data_frame_inside_counter] = ESC;
+      data_frame[data_frame_inside_counter + 1] = FLAG_NEXT;
 
-      }
-
-      buffer[i+1] = ESC_NEXT;
-
-      int new_pos = i+2;
-
-      for(int num_move = 0; num_move < inside_temp)
-      {
-          buffer[new_ pos] = temp[num_move];
-          new_pos++;
-      }
-      
-      inside_temp = 0;
-
-      
-      
-      i = i+2;
+      data_frame_inside_counter++;
+      data_frame_inside_counter++;
     } 
     else
     {
-        data_frame[i+4] = buffer[i];   
+        data_frame[data_frame_inside_counter] = buffer[i];   
     }
     
   }
-  if(strlen(BCC_stuffed) == 1)
+  if(strlen((char*)BCC_data_stuffed) == 1)
   {
-      data_frame[strlen(data_frame)+1] = BCC;
+      data_frame[data_frame_size-1] = BCC_data;
   }
-  else if(strlen(BCC_stuffed)== 2)
+  else if(strlen((char*)BCC_data_stuffed)== 2)
   {
-      data_frame[strlen(data_frame)+1] = BCC_stuffed[0];
-      data_frame[strlen(data_frame)+1] = BCC_stuffed[1];
+      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char))*(data_frame_size++));
+      data_frame[data_frame_size-2] = BCC_data_stuffed[0];
+      data_frame[data_frame_size-1] = BCC_data_stuffed[1];
   }
 
-  data_frame[strlen(data_frame)+1] = FLAG;
+  data_frame[data_frame_size] = FLAG;
 
 
-  write(fd, data_frame, sizeof(data_frame));
+  
+  (void)signal(SIGALRM, alarm_handler);
+
+  //install alarm 
+
+    while(attempt < layerPressets.numTransmissions){
+        if(flag){
+            res = write(fd, data_frame, sizeof(data_frame));
+            if( res < 0){
+                printf("Error writting to port!\n");
+                return -1;
+            }
+            alarm(layerPressets.timeout);
+            //read the ACK or NACK choose what to do!
+        }
+    }
+    //write to port 
         
-    
-    
+    printf("ola");
+
+    return 0;    
     
 }
-*/
+
 int llread(int fd, char *buffer){
 
     buffer[0] = fd; 
