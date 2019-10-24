@@ -156,40 +156,12 @@ int llopen(int port, int type)
     //make structure
     return fd;
 }
-//*VERSAO ANTIGA - FUCNIONAL MAS BASICA
-int llwrite(int fd, char *buffer, int length){
-    
-    int res; 
-    //char buf[255] to write from!
-
-    //TODO tuff bytes 
-    //TODO add FH to buffer received
-    
-    //install alarm 
-    (void)signal(SIGALRM, alarm_handler);
-
-    while(attempt < layerPressets.numTransmissions){
-        if(flag){
-            res = write(fd,buffer,length);
-            if( res < 0){
-                printf("Error writting to port!\n");
-                return -1;
-            }
-            alarm(layerPressets.timeout);
-            //read the ACK or NACK choose what to do!
-        }
-    }
-    //write to port 
 
 
-    printf("ola");
-    
-    return 0; //if sucessful 
-}
-/*
 //PROTIPO DO ANDY 
 int llwrite(int fd, char *buffer, int length)
 {
+    int res;
     unsigned char BCC_data;
     int data_frame_size = length + 6;
     unsigned char * BCC_data_stuffed = (unsigned char *) malloc((sizeof(unsigned char))*2);
@@ -253,14 +225,30 @@ int llwrite(int fd, char *buffer, int length)
   data_frame[data_frame_size] = FLAG;
 
 
-  write(fd, data_frame, sizeof(data_frame));
+  
+  (void)signal(SIGALRM, alarm_handler);
+
+  //install alarm 
+
+    while(attempt < layerPressets.numTransmissions){
+        if(flag){
+            res = write(fd, data_frame, sizeof(data_frame));
+            if( res < 0){
+                printf("Error writting to port!\n");
+                return -1;
+            }
+            alarm(layerPressets.timeout);
+            //read the ACK or NACK choose what to do!
+        }
+    }
+    //write to port 
         
-    
+    printf("ola");
 
     return 0;    
     
 }
-*/
+
 int llread(int fd, char *buffer){
 
     buffer[0] = fd; 
