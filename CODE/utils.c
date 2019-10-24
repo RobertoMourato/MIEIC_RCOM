@@ -48,15 +48,15 @@ char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLe
 
 char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer){
 
-    *dataPackLen = 4 + strlen(data); // C+N+L1+L2
-    char * dataPacket = (char *)malloc( *dataPackLen);
+    *dataPackLen = 4 + filesize; // C+N+L1+L2
+    char * dataPacket = (char *)malloc(*dataPackLen);
 
     dataPacket[0]= C1;
     dataPacket[1]= linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
     dataPacket[2]= (char) filesize/256; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
     dataPacket[3]= (char) filesize %256; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
     strcat((char*)dataPacket+5,data);//P1 ... PK – campo de dados do pacote (K octetos)
-    
+    //memcpy(dataPacket+4,data,);
     //increment sequenceNumber 
     linkLayer->sequenceNumber++;
 

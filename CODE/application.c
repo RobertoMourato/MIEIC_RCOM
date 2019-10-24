@@ -104,7 +104,7 @@ int interface()
                 int L1;
                 int L2;
                 int messageCount;
-                //char * fileRes; 
+               // char * fileFinal;  //to store all the data 
 
                 //vars common 
                 unsigned char *fileData;
@@ -237,9 +237,10 @@ int interface()
                             printf("received wrong seq num packet");
                         }
                         //get size of the next packets
+                        //check if L1 and L2 matches with data len received 
                         
-                        //memcpy(fileRes);
-
+                        //memcpy(fileFinal+index,);
+                        //strcat()
                        
                         break;
                     case C3: //case it ends processing packet
@@ -251,8 +252,24 @@ int interface()
                 free(fileData);
                 free(filename);
                 free(filesize);
-
+                //todo write file 
+                /*
                 //write file on the OS 
+                f = fopen(filename,"wb+");
+                if(f == NULL){
+                    printf("Error oppenning file to write!\n");
+                    return -1;
+                }
+                fwrite((void*)fileFinal,1,(off_t)filesize,f);
+                printf("%zd\n", (off_t)filesize);
+                printf("New file created\n");
+                res = fclose(f);
+                if (res != 0)
+                {
+                    printf("Error closing file!\n");
+                    return -1;
+                }
+                */
             }
             break;
         case 2:
