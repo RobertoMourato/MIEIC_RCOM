@@ -14,6 +14,7 @@
 
 //GLOBALS
 applicationLayer app;
+extern linkLayer layerPressets;
 
 int main(void)
 { //run console UI
@@ -89,14 +90,24 @@ int interface()
         case 1:
             switch (app.status)
             {
-                //vars
+                //vars TRANSMITTER
                 int res;
                 char path[255];
                 struct stat metadata;
                 FILE *f;
-                unsigned char *fileData;
-
                 char *controlPack;
+
+                //vars RECEIVER
+                int len;
+                char *filename, *filesize, buf[4+MAX_SIZE];
+                int eof;
+                int L1;
+                int L2;
+                int messageCount;
+                //char * fileRes; 
+
+                //vars common 
+                unsigned char *fileData;
 
             case (TRANSMITTER):
 
@@ -158,12 +169,13 @@ int interface()
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
                     int dataPackSize = 0;
-                    char *dataPack = makeDatePacket(tmpPack, &dataPackSize);
+                    char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
                     if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
                     { //wait for the return value
                         printf("Error writting mid control packet");
                         return -1;
                     }
+                    free(tmpPack);
                 }
                 //send PH Data start
                 controlPackSize = 0;
@@ -179,40 +191,68 @@ int interface()
                 break;
             case (RECEIVER):
                 //remove nd read flags created on the case before and store the date on a file
-                //TODO penso que e suposto fazer leitura bit a bit mas eu estou super casado ja nao dao mais...
-                /*
-                int eof = FALSE, res, len;
-                char *filename, buffer;
-
+                eof=FALSE;
+                L1 = 0;
+                L2 = 0;
+                messageCount=1;
                 while (!eof)
                 {
                     //keep reading until gets...
-                    len = llread(app.fileDescriptor, buffer);
+                    //buf = (char *) malloc(4+MAX_SIZE); //dataHeader + maxsize can port
+                    len = llread(app.fileDescriptor,buf);
                     if (len < 0)
                     {
                         printf("Error reading file");
                         return -1;
                     }
-                    switch ((buffer + 0))
+                    switch (buf[0])
                     {
-                    case CSTART:
-                        if((buffer+1) == T1){
-                            filename = (char *)malloc(());
+                    case C2: //start case
+                        if (buf[1] == T1) //Type
+                        {
+                            L1 = (int)buf[2];
+                            filesize = (char *)malloc(buf[2]); //Length
+                            //cycle read num
+                            for (int i = 0; i < L1; i++)
+                            {
+                                strcat(filesize, &buf[3+i]);
+                            }
+                            //aloc mememory to store file passed
+                            fileData = (unsigned char *)malloc((size_t)filesize); //todo check if int is correct
                         }
-                        if((buffer+1) == T2){
-                            filename = (char *)malloc(());
+                        if ((buf[3 + L1]) == T2)
+                        {
+                            L2 = (int)buf[L1 + 4];
+                            filename = (char *)malloc(buf[4 + L1]); //Length
+                            for (int i = 0; i < L2; i++)
+                            {
+                                strcat(filename, &buf[5 + L1 + i]);
+                            }
                         }
+                        //stop processment as control packets dont port file chunks
                         break;
-                    case CDATA:
-                    //nao sei manipular bem estes
+                    case C1: //case it receives data
+                        //get data
+                        if(buf[1] != messageCount){ //get N 
+                            printf("received wrong seq num packet");
+                        }
+                        //get size of the next packets
+                        
+                        //memcpy(fileRes);
+
+                       
                         break;
-                    case CEND:
-                        eof = FALSE;
-                        break;
+                    case C3: //case it ends processing packet
+                        eof = TRUE;
+                        //doesnt need to read, just for confirmation????
+                        //TODO ask
                     }
                 }
-                */
-                break;
+                free(fileData);
+                free(filename);
+                free(filesize);
+
+                //write file on the OS 
             }
             break;
         case 2:

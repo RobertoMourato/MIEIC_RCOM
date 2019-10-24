@@ -75,8 +75,6 @@ typedef struct
     supervision_state_t state;
 } supervision_instance_data_t;
 
-
-
 /**
  * @brief set linklayer data 
  * @param linkLayer linklayer to make
@@ -96,10 +94,12 @@ char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
 /**
  * @brief make control packet 
  * @param path filename path 
- * @param controlPackLen length of the control pack made
+ * @param dataPackLen length of the control pack made
+ * @param filesize file of file to write 
+ * @param linkLayer linkpressets so that i can acsses message seq number count
  * @return char * with control packet
  */
-char * makeDatePacket(char data[],int *dataPackLen);
+char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer);
 
 /**
  * @brief set reception state machine 
@@ -107,12 +107,14 @@ char * makeDatePacket(char data[],int *dataPackLen);
  * @param pack byte to check 
  */
 void set_reception(supervision_instance_data_t *machine, unsigned char pack);
+
 /**
  * @brief ua reception state machine 
  * @param machine get machine current state 
  * @param pack byte to check 
  */
 void ua_reception(supervision_instance_data_t *machine, unsigned char pack);
+
 /**
  * @brief disc reception state machine 
  * @param machine get machine current state 
@@ -120,9 +122,19 @@ void ua_reception(supervision_instance_data_t *machine, unsigned char pack);
  */
 void disc_reception(supervision_instance_data_t *machine, unsigned char pack);
 
+/**
+ * @brief generate BCC packet 
+ * @param buffer //todo
+ * @param size //todo
+ * @return //todo
+ */
 unsigned char BCC_make(char * buffer, int size);
 
-unsigned char* BCC_stuffing(unsigned char BCC);
-
+/**
+ * @brief stuffing bcc
+ * @param BCC //todo
+ * @return //todo
+ */
+unsigned char * BCC_stuffing(unsigned char BCC);
 
 #endif // UTILS_H_

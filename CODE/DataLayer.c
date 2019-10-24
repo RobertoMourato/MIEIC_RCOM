@@ -185,7 +185,9 @@ int llwrite(int fd, char *buffer, int length){
     printf("ola");
     
     return 0; //if sucessful 
-//*PROTIPO DO ANDY 
+}
+/*
+//PROTIPO DO ANDY 
 int llwrite(int fd, char *buffer, int length);
 {
     unsigned char BCC_data;
@@ -292,8 +294,13 @@ int llwrite(int fd, char *buffer, int length);
     
     
 }
+*/
+int llread(int fd, char *buffer){
 
-int llread(int fd, char *buffer);
+    buffer[0] = fd; 
+    
+    return 0; 
+}
 
 int llclose(int fd)
 {

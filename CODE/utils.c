@@ -13,7 +13,7 @@
 void setLinkLayer(linkLayer *linkLayer,char port[]){
     strcpy(linkLayer->port,port);
     linkLayer->baudRate = BAUDRATE;
-    linkLayer->sequenceNumber = SEQNUM; //TODO put smth here that i dont know 
+    linkLayer->sequenceNumber = 1; //TODO put smth here that i dont know 
     linkLayer->timeout = TIMEOUT;
     linkLayer->numTransmissions = ATEMPTS;
 }
@@ -46,18 +46,19 @@ char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLe
     return controlPacket;
 }
 
-char * makeDatePacket(char data[],int *dataPackLen){
+char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer){
 
-    *dataPackLen = 6 + strlen(data); // C+N+L2+L1+P1+P2
+    *dataPackLen = 4 + strlen(data); // C+N+L1+L2
     char * dataPacket = (char *)malloc( *dataPackLen);
 
     dataPacket[0]= C1;
-    dataPacket[1]= 0x01; //N – número de sequência (módulo 255)
-    dataPacket[2]= 0x01; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
-    dataPacket[3]= 0x01; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
-    dataPacket[4]= 0x01;//P1 ... PK – campo de dados do pacote (K octetos)
-    strcat((char*)dataPacket+5,data);
-    dataPacket[5+strlen(data)] =0x01;//P1 ... PK – campo de dados do pacote (K octetos)
+    dataPacket[1]= linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
+    dataPacket[2]= (char) filesize/256; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
+    dataPacket[3]= (char) filesize %256; //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
+    strcat((char*)dataPacket+5,data);//P1 ... PK – campo de dados do pacote (K octetos)
+    
+    //increment sequenceNumber 
+    linkLayer->sequenceNumber++;
 
     return dataPacket;
 
@@ -248,8 +249,9 @@ unsigned char BCC_make(char * buffer, int size)
 }
 
 unsigned char * BCC_stuffing(unsigned char BCC)
-{
-    unsigned char * BCC_stuffed;
+{   
+    //todo checka isto, porque nao sei o que queres guardar na string 
+    unsigned char * BCC_stuffed = malloc(sizeof(char)); 
     if(BCC == ESC)
     {
         BCC_stuffed[0] = ESC;
