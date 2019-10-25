@@ -137,4 +137,8 @@ unsigned char BCC_make(char * buffer, int size);
  */
 unsigned char * BCC_stuffing(unsigned char BCC);
 
+void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
+bool endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader);
+
 #endif // UTILS_H_

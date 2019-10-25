@@ -99,14 +99,14 @@ int interface()
 
                 //vars RECEIVER
                 int len;
-                char *filename, *filesize, buf[4+MAX_SIZE];
+                char *filename, *filesize, buf[4 + MAX_SIZE];
                 int eof;
                 int L1;
                 int L2;
                 int messageCount;
-               // char * fileFinal;  //to store all the data 
+                // char * fileFinal;  //to store all the data
 
-                //vars common 
+                //vars common
                 unsigned char *fileData;
 
             case (TRANSMITTER):
@@ -190,6 +190,66 @@ int interface()
 
                 break;
             case (RECEIVER):
+
+                eof = FALSE;
+
+                int sizeOfStartTransmition = 0;
+                int sizeOfMessage = 0;
+                int sizeWithNoHeader = 0;
+                off_t sizeOfAllMessages = 0;
+                off_t aux = 0;
+
+                unsigned char *startTransmition;
+                unsigned char *message;
+                unsigned char *fileName;
+
+                sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
+                setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
+                unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
+
+                while (!eof)
+                {
+                    sizeOfMessage = llread(app.fileDescriptor, message);
+
+                    if (sizeOfMessage == 0)
+                    {
+                        continue;
+                    }
+
+                    if (endReached(message, sizeOfMessage, startTransmition, sizeOfStartTransmition))
+                    {
+                        printf("End Reached!\n");
+                        break;
+                    }
+
+                    sizeWithNoHeader = 0;
+                    message = headerRemoval(message, sizeOfMessage, &sizeWithNoHeader);
+                    memcpy(allMessages + aux, message, sizeWithNoHeader);
+                    aux += sizeWithNoHeader;
+                }
+                /*
+                printf("Test Message: \n");
+                for (size_t i = 0; i < sizeOfAllMessages; i++)
+                {
+                    printf("%x", allMessages[i]);
+                }
+                */
+                FILE *file = fopen((char *) fileName, "wb+");
+                if(file == NULL){
+                    printf("Error oppenning file to write!\n");
+                    return -1;
+                }
+                fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
+                printf("%zd\n", (off_t)filesize);
+                printf("New file created\n");
+                res = fclose(file);
+                if (res != 0)
+                {
+                    printf("Error closing file!\n");
+                    return -1;
+                }
+
+                /*
                 //remove nd read flags created on the case before and store the date on a file
                 eof=FALSE;
                 L1 = 0;
