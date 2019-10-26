@@ -221,6 +221,9 @@ int llwrite(int fd, unsigned char *buffer, int length)
             data_frame_inside_counter++;
         }
     }
+    for(int i = 0; i < 6; ++data_frame_size)
+    fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+
     if (strlen((char *)BCC_data_stuffed) == 1)
     {
         data_frame[data_frame_size - 1] = BCC_data;
