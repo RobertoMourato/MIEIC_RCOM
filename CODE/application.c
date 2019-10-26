@@ -98,12 +98,13 @@ int interface()
                 char *controlPack;
 
                 //vars RECEIVER
-                int len;
-                char *filename, *filesize, buf[4 + MAX_SIZE];
+                //int len;
+                //char *filename, buf[4 + MAX_SIZE];
+                //char*filesize;
                 int eof;
-                int L1;
-                int L2;
-                int messageCount;
+                //int L1;
+                //int L2;
+                //int messageCount;
                 // char * fileFinal;  //to store all the data
 
                 //vars common
@@ -117,7 +118,7 @@ int interface()
 
                 //aplication level, has to read the file, split the file, make the frames and set packet header
                 scanf("%s", path);
-                printf(" size: %ld\n", strlen(path));
+                printf(" path size: %ld\n", strlen(path));
 
                 //open file
                 f = fopen(path, "rb");
@@ -137,7 +138,7 @@ int interface()
                     printf("Error reading file!\n");
                 }
                 else
-                    printf("File read has %d coiso\n ", res);
+                    printf("File read has %d Bytes\n ", res);
 
                 //close file
                 res = fclose(f);
@@ -145,14 +146,17 @@ int interface()
                 {
                     printf("Error closing file!\n");
                     return -1;
-                }
+                }else printf("File closed...\n");
 
-                printf("res: %d\n", ((int)metadata.st_size) / MAX_SIZE);
+                printf("It will make %d File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
                 //send PH Data start
                 int controlPackSize = 0;
                 controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
-                printf("size %d\n", controlPackSize);
-                if (llwrite(app.fileDescriptor, controlPack, controlPackSize) == -1)
+                printf("Controll pack size %d - %s\n", controlPackSize,controlPack);
+
+                //START WRITTING STUFF
+                printf("Writing Start Control pack...\n");
+                if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
                 {
                     printf("Error writting start control packet");
                     return -1;
@@ -199,17 +203,20 @@ int interface()
                 off_t sizeOfAllMessages = 0;
                 off_t aux = 0;
 
-                unsigned char *startTransmition;
+                unsigned char *startTransmition = (unsigned char *)malloc(255);
                 unsigned char *message;
-                unsigned char *fileName;
+                unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
+                printf("Read message with %d\n",sizeOfStartTransmition);
+
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
 
                 while (!eof)
                 {
                     sizeOfMessage = llread(app.fileDescriptor, message);
+                    printf("Read message with %d\n",sizeOfMessage);
 
                     if (sizeOfMessage == 0)
                     {
@@ -240,7 +247,7 @@ int interface()
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
-                printf("%zd\n", (off_t)filesize);
+                printf("%zd\n", (off_t)sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);
                 if (res != 0)
@@ -313,7 +320,7 @@ int interface()
                 free(filename);
                 free(filesize);
                 //todo write file 
-                /*
+                
                 //write file on the OS 
                 f = fopen(filename,"wb+");
                 if(f == NULL){

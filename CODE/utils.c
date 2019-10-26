@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "utils.h"
 #include "error.h"
 #include "DataLayer.h"
-#include "alarm.h"
 
 void setLinkLayer(linkLayer *linkLayer,char port[]){
     strcpy(linkLayer->port,port);
@@ -276,7 +276,7 @@ unsigned char read_control_field(int fd)
     unsigned char control_field;
 
 
-    while(flag && !(SU_state.state == stop))
+    while(/*flag && */!(SU_state.state == stop))
     {
         read(fd,&part_of_frame,1);
         
@@ -325,9 +325,111 @@ unsigned char read_control_field(int fd)
                     SU_state.state = start;
                 }
                 break;
+            case stop:
+                break;
                 
         }
     }
     printf("Error in reading control field");
-    return NULL;
+    //cant return null in C
+    return '0';
+}
+
+//Roberto 
+
+unsigned char *startFileName(unsigned char *start)
+{
+    int aux = (int)start[8];
+    int i = 0;
+    unsigned char *fileName = (unsigned char *)malloc(aux + 1);
+
+    while (i < aux)
+    {
+        fileName[i] = start[i + 9];
+        i++;
+    }
+    fileName[aux] = '\0';
+    return fileName;
+}
+
+void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsigned char *startTransmition)
+{
+    int aux = (int)startTransmition[8];
+    int i = 0;
+    unsigned char *fileNameAux = (unsigned char *)malloc(aux + 1);
+
+    while (i < aux)
+    {
+        fileNameAux[i] = startTransmition[i + 9];
+        i++;
+    }
+    fileNameAux[aux] = '\0';
+
+    *fileName = *fileNameAux;
+    *sizeOfAllMessages = (off_t)(startTransmition[3] << 24) | (startTransmition[4] << 16) | (startTransmition[5] << 8) | (startTransmition[6]);
+}
+
+int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTransmition, int sizeOfStartTransmition)
+{
+    if (sizeOfMessage != sizeOfStartTransmition)
+    {
+        return FALSE;
+    }
+    else
+    {
+        if (message[0] == C3)
+        {
+            for (size_t i = 1; i <= (size_t)sizeOfMessage; i++)
+            {
+                if (message[i] != startTransmition[i])
+                {
+                    return FALSE;
+                }
+            }
+        }
+        else
+            return FALSE;
+    }
+return TRUE;
+}
+
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader)
+{
+
+    unsigned char *aux = (unsigned char *)malloc(sizeOfMessage - 4);
+
+    for (size_t i = 0; (i + 4) < (size_t)sizeOfMessage; i++)
+    {
+        aux[i] = message[i + 4];
+    }
+
+    *sizeWithNoHeader = sizeOfMessage - 4;
+    return aux;
+}
+
+int checkBCC2(unsigned char *message, int sizeMessage)
+{
+  int i = 1;
+  unsigned char BCC2 = message[0];
+  for (; i < sizeMessage - 1; i++)
+  {
+    BCC2 ^= message[i];
+  }
+  if (BCC2 == message[sizeMessage - 1])
+  {
+    return TRUE;
+  }
+  else
+    return FALSE;
+}
+
+void sendControlMessage(int fd, unsigned char C)
+{
+  unsigned char message[5];
+  message[0] = FLAG;
+  message[1] = A_3;
+  message[2] = C;
+  message[3] = message[1] ^ message[2];
+  message[4] = FLAG;
+  write(fd, message, 5);
 }

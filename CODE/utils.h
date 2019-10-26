@@ -35,7 +35,7 @@
 #define SEQNUM 0
 #define TIMEOUT 3
 #define ATEMPTS 3
-#define MAX_SIZE 1024
+#define MAX_SIZE 2
 
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
@@ -139,5 +139,13 @@ unsigned char BCC_make(char * buffer, int size);
 unsigned char * BCC_stuffing(unsigned char BCC);
 
 unsigned char read_control_field(int fd);
+
+//roberto
+unsigned char *startFileName(unsigned char *start);
+void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
+int endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader);
+int checkBCC2(unsigned char *message, int sizeMessage);
+void sendControlMessage(int fd, unsigned char C);
 
 #endif // UTILS_H_

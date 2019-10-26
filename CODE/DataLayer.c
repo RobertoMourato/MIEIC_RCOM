@@ -120,6 +120,7 @@ int llopen(int port, int type)
                 if (machineOpenTransmitter.state == stop)
                 {
                     turnoff_alarm();
+                    //alarm(0);
                     printf("Passei corretamente!\n");
                     break;
                 }
@@ -157,103 +158,248 @@ int llopen(int port, int type)
     return fd;
 }
 
-
-//PROTIPO DO ANDY 
+//PROTIPO DO ANDY
 int llwrite(int fd, char *buffer, int length)
 {
     int res;
+    char *buf[255];
     unsigned char BCC_data;
     int data_frame_size = length + 6;
-    unsigned char * BCC_data_stuffed = (unsigned char *) malloc((sizeof(unsigned char))*2);
-    unsigned char * data_frame = (unsigned char *) malloc((sizeof(unsigned char))* data_frame_size);
+    unsigned char *BCC_data_stuffed = (unsigned char *)malloc((sizeof(unsigned char)) * 2);
+    unsigned char *data_frame = (unsigned char *)malloc((sizeof(unsigned char)) * data_frame_size);
     BCC_data = BCC_make(buffer, length);
     BCC_data_stuffed = BCC_stuffing(BCC_data);
 
     data_frame[0] = FLAG;
     data_frame[1] = A_3;
-    
-    if(num_frame == 0)
+
+    if (num_frame == 0)
     {
+        printf("R(0)\n");
         data_frame[2] = NS_0;
     }
     else
     {
+        printf("R(1)\n");
         data_frame[2] = NS_1;
     }
 
-    data_frame[3] = (A_3^data_frame[2]);
+    data_frame[3] = (A_3 ^ data_frame[2]);
 
     int data_frame_inside_counter = 4;
-    for(int i = 0; i < length; i++)
-  {
-    
-    if(buffer[i] == ESC )     //byte stuffing
-    {
-      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char*))*(data_frame_size++));  
-      data_frame[data_frame_inside_counter] = ESC;
-      data_frame[data_frame_inside_counter + 1] = ESC_NEXT;
 
-      data_frame_inside_counter++;
-      data_frame_inside_counter++;
+    printf("Stuffing Bytes...\n");
+    for (int i = 0; i < length; i++)
+    {
+
+        if (buffer[i] == ESC) //byte stuffing
+        {
+            data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char *)) * (data_frame_size++));
+            data_frame[data_frame_inside_counter] = ESC;
+            data_frame[data_frame_inside_counter + 1] = ESC_NEXT;
+
+            data_frame_inside_counter++;
+            data_frame_inside_counter++;
+        }
+        else if (buffer[i] == FLAG)
+        {
+            data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char *)) * (data_frame_size++));
+            data_frame[data_frame_inside_counter] = ESC;
+            data_frame[data_frame_inside_counter + 1] = FLAG_NEXT;
+
+            data_frame_inside_counter++;
+            data_frame_inside_counter++;
+        }
+        else
+        {
+            data_frame[data_frame_inside_counter] = buffer[i];
+        }
     }
-    else if(buffer[i] == FLAG)
+    if (strlen((char *)BCC_data_stuffed) == 1)
     {
-      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char*))*(data_frame_size++));  
-      data_frame[data_frame_inside_counter] = ESC;
-      data_frame[data_frame_inside_counter + 1] = FLAG_NEXT;
-
-      data_frame_inside_counter++;
-      data_frame_inside_counter++;
-    } 
-    else
-    {
-        data_frame[data_frame_inside_counter] = buffer[i];   
+        data_frame[data_frame_size - 1] = BCC_data;
     }
-    
-  }
-  if(strlen((char*)BCC_data_stuffed) == 1)
-  {
-      data_frame[data_frame_size-1] = BCC_data;
-  }
-  else if(strlen((char*)BCC_data_stuffed)== 2)
-  {
-      data_frame = (unsigned char *) realloc(data_frame, (sizeof(unsigned char))*(data_frame_size++));
-      data_frame[data_frame_size-2] = BCC_data_stuffed[0];
-      data_frame[data_frame_size-1] = BCC_data_stuffed[1];
-  }
+    else if (strlen((char *)BCC_data_stuffed) == 2)
+    {
+        data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
+        data_frame[data_frame_size - 2] = BCC_data_stuffed[0];
+        data_frame[data_frame_size - 1] = BCC_data_stuffed[1];
+    }
 
-  data_frame[data_frame_size] = FLAG;
+    data_frame[data_frame_size] = FLAG;
 
+    printf("data frame size: %ld\n", sizeof(data_frame));
 
-  
-  (void)signal(SIGALRM, alarm_handler);
+    (void)signal(SIGALRM, alarm_handler);
 
-  //install alarm 
-
-    while(attempt < layerPressets.numTransmissions){
-        if(flag){
+    //install alarm
+    while (attempt < layerPressets.numTransmissions)
+    {
+        if (flag)
+        {
+            printf("attempt %d\n", flag);
+            //tcflush(fd, TCIOFLUSH);
+            printf("Write to port...\n");
+            //write to port
             res = write(fd, data_frame, sizeof(data_frame));
-            if( res < 0){
+            if (res < 0)
+            {
                 printf("Error writting to port!\n");
                 return -1;
             }
+            printf("escrevi\n");
             alarm(layerPressets.timeout);
+            flag = 0;
             //read the ACK or NACK choose what to do!
+            printf("Receiving ACK NACK...\n");
+            for (int i = 0; i < 5; i++)
+            {
+                res = read(fd, &buf[i], 1);
+            }
+            //sleep(4);
         }
-    }
-    //write to port 
-        
-    printf("ola");
 
-    return 0;    
-    
+        //return 0 when succsefull
+    }
+    printf("ola\n");
+
+    return -1;
 }
 
-int llread(int fd, char *buffer){
+int llread(int fd, unsigned char *buffer)
+{
+    int *sizeBuffer = 0;
+    unsigned char packectReaded;
+    unsigned char packet;
+    int auxTrama = 0;
+    int sendData = FALSE;
+    int state = 0;
 
-    buffer[0] = fd; 
-    
-    return 0; 
+    while (state != 6)
+    {
+        printf("Reading...\n");
+        read(fd, &packet, 1);
+        switch (state)
+        {
+        case 0:
+            if (packet == FLAG)
+                state = 1;
+            break;
+        case 1:
+            if (packet == A_3)
+                state = 2;
+            else
+            {
+                if (packet == FLAG)
+                    state = 1;
+                else
+                    state = 0;
+            }
+            break;
+        case 2:
+            if (packet == NS_0)
+            {
+                auxTrama = 0;
+                packectReaded = packet;
+                state = 3;
+            }
+            else if (packet == NS_1)
+            {
+                auxTrama = 1;
+                packectReaded = packet;
+                state = 3;
+            }
+            else
+            {
+                if (packet == FLAG)
+                    state = 1;
+                else
+                    state = 0;
+            }
+            break;
+        case 3:
+            if (packet == (A_3 ^ packectReaded))
+                state = 4;
+            else
+                state = 0;
+            break;
+        case 4:
+            if (packet == FLAG)
+            {
+                if (checkBCC2(buffer, *sizeBuffer))
+                {
+                    if (auxTrama == 0)
+                        sendControlMessage(fd, RR1);
+                    else
+                        sendControlMessage(fd, RR0);
+
+                    state = 6;
+                    sendData = TRUE;
+                    printf("Enviou RR, T: %d\n", auxTrama);
+                }
+                else
+                {
+                    if (auxTrama == 0)
+                        sendControlMessage(fd, REJ1);
+                    else
+                        sendControlMessage(fd, REJ0);
+                    state = 6;
+                    sendData = FALSE;
+                    printf("Enviou REJ, T: %d\n", auxTrama);
+                }
+            }
+            else if (packet == ESC)
+            {
+                state = 5;
+            }
+            else
+            {
+                buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
+                buffer[*sizeBuffer - 1] = packet;
+            }
+            break;
+        case 5:
+            //printf("5state\n");
+            if (packet == FLAG_NEXT)
+            {
+                buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
+                buffer[*sizeBuffer - 1] = FLAG;
+            }
+            else
+            {
+                if (packet == ESC_NEXT)
+                {
+                    buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
+                    buffer[*sizeBuffer - 1] = ESC;
+                }
+                else
+                {
+                    perror("Non valid character after escape character");
+                    exit(-1);
+                }
+            }
+            state = 4;
+            break;
+        }
+    }
+
+    printf("Message size: %d\n", *sizeBuffer);
+    //message tem BCC2 no fim
+    buffer = (unsigned char *)realloc(buffer, *sizeBuffer - 1);
+
+    *sizeBuffer = *sizeBuffer - 1;
+    if (sendData)
+    {
+        if (auxTrama == num_frame)
+        {
+            num_frame ^= 1;
+        }
+        else
+            *sizeBuffer = 0;
+    }
+    else
+        *sizeBuffer = 0;
+    return *sizeBuffer;
 }
 
 int llclose(int fd)
