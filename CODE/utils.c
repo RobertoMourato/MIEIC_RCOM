@@ -12,6 +12,8 @@
 #include "error.h"
 #include "DataLayer.h"
 
+extern int flag;
+
 void setLinkLayer(linkLayer *linkLayer,char port[]){
     strcpy(linkLayer->port,port);
     linkLayer->baudRate = BAUDRATE;
@@ -283,7 +285,7 @@ unsigned char read_control_field(int fd)
     unsigned char control_field;
 
 
-    while(/*flag && */!(SU_state.state == stop))
+    while(flag && !(SU_state.state == stop))
     {
         read(fd,&part_of_frame,1);
         

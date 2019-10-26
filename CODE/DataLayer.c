@@ -101,9 +101,9 @@ int llopen(int port, int type)
             if (flag)
             {
                 //SENDING SET
-                printf("attempt %d...\n",attempt);
+                printf("attempt %d...\n", attempt);
                 printf("Sending SET...\n");
-                print_buf("SET",set,5);
+                print_buf("SET", set, 5);
                 res = write(fd, set, 5);
                 if (res < 0)
                     exit(ERR_WR);
@@ -151,7 +151,7 @@ int llopen(int port, int type)
 
         //SEND UA
         printf("Sending UA...\n");
-        print_buf("UA",ua,5);
+        print_buf("UA", ua, 5);
         res = write(fd, ua, 5);
         if (res < 0)
             exit(ERR_WR);
@@ -165,9 +165,9 @@ int llopen(int port, int type)
 //PROTIPO DO ANDY
 int llwrite(int fd, unsigned char *buffer, int length)
 {
-    print_buf("Received: ",buffer,length);
+    print_buf("Received: ", buffer, length);
     int res;
-    unsigned char *buf[255];
+    //unsigned char *buf[255];
     unsigned char BCC_data;
     int data_frame_size = length + 6;
     unsigned char *BCC_data_stuffed = (unsigned char *)malloc((sizeof(unsigned char)) * 2);
@@ -234,16 +234,19 @@ int llwrite(int fd, unsigned char *buffer, int length)
     data_frame[data_frame_size] = FLAG;
 
     printf("data frame size: %ld\n", sizeof(data_frame));
-    print_buf("to pass: ",data_frame,sizeof(data_frame));
+    print_buf("to pass: ", data_frame, sizeof(data_frame));
 
     (void)signal(SIGALRM, alarm_handler);
 
     //install alarm
-   while(attempt < layerPressets.numTransmissions){
-        if(flag){                                                                   // this flag is not from this function I think
+    while (attempt < layerPressets.numTransmissions)
+    {
+        if (flag)
+        { // this flag is not from this function I think
             printf("Writing data_frame");
             res = write(fd, data_frame, sizeof(data_frame));
-            if( res < 0){
+            if (res < 0)
+            {
                 printf("Error writting to port!\n");
                 return -1;
             }
@@ -251,22 +254,17 @@ int llwrite(int fd, unsigned char *buffer, int length)
             unsigned char control_field = read_control_field(fd);
             alarm(layerPressets.timeout);
             flag = 0;
-            if(data_frame[2]== NS_0 && control_field == RR1 || data_frame[2] == NS_1 && control_field == RR0 )
-            {   
+            if ((data_frame[2] == NS_0 && control_field == RR1 )|| (data_frame[2] == NS_1 && control_field == RR0))
+            {
                 printf("control field from write and read compatable");
                 num_frame = num_frame ^ 1;
                 alarm(0);
                 return 0;
-            }            
+            }
             //read the ACK or NACK choose what to do!
-            
         }
     }
-
-        //return 0 when succsefull
-    }
-    printf("ola\n");
-
+     printf("ola\n");
     return -1;
 }
 
