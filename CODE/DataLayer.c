@@ -233,31 +233,29 @@ int llwrite(int fd, char *buffer, int length)
     (void)signal(SIGALRM, alarm_handler);
 
     //install alarm
-    while (attempt < layerPressets.numTransmissions)
-    {
-        if (flag)
-        {
-            printf("attempt %d\n", flag);
-            //tcflush(fd, TCIOFLUSH);
-            printf("Write to port...\n");
-            //write to port
+   while(attempt < layerPressets.numTransmissions){
+        if(flag){                                                                   // this flag is not from this function I think
+            printf("Writing data_frame");
             res = write(fd, data_frame, sizeof(data_frame));
-            if (res < 0)
-            {
+            if( res < 0){
                 printf("Error writting to port!\n");
                 return -1;
             }
-            printf("escrevi\n");
+            printf("going to read control field sent from read");
+            unsigned char control_field = read_control_field(fd);
             alarm(layerPressets.timeout);
             flag = 0;
+            if(data_frame[2]== NS_0 && control_field == RR1 || data_frame[2] == NS_1 && control_field == RR0 )
+            {   
+                printf("control field from write and read compatable");
+                num_frame = num_frame ^ 1;
+                alarm(0);
+                return 0;
+            }            
             //read the ACK or NACK choose what to do!
-            printf("Receiving ACK NACK...\n");
-            for (int i = 0; i < 5; i++)
-            {
-                res = read(fd, &buf[i], 1);
-            }
-            //sleep(4);
+            
         }
+    }
 
         //return 0 when succsefull
     }
