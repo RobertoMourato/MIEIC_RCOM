@@ -79,7 +79,8 @@ int interface()
                     app.status = RECEIVER;
                 //do llopen and store on descripter
                 app.fileDescriptor = llopen(portNr, openType);
-                if (app.fileDescriptor < 0){
+                if (app.fileDescriptor < 0)
+                {
                     printf("Error Openning!");
                     exit(ERR_LLOPEN);
                 }
@@ -140,36 +141,43 @@ int interface()
                 {
                     printf("Error closing file!\n");
                     return -1;
-                }else printf("File closed...\n");
+                }
+                else
+                    printf("File closed...\n");
 
                 printf("It will make %d File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
                 //send PH Data start
+                
                 int controlPackSize = 0;
                 controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
                 printf("Controll pack size %d\n", controlPackSize);
-                
-                print_buf("Control",controlPack,controlPackSize);
+
+                print_buf("Control", controlPack, controlPackSize);
 
                 //START WRITTING STUFF
+               
                 printf("Writing Start Control pack...\n");
                 if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
                 {
                     printf("Error writting start control packet");
                     return -1;
                 }
-
+                
                 //while splitting the file
                 for (int i = 0; i < ((int)metadata.st_size) / MAX_SIZE + 1; i++)
                 {
                     //split data to send
                     char *tmpPack;
                     tmpPack = (char *)malloc(MAX_SIZE);
-                    for (int j = 0; j <= MAX_SIZE; j++)
+                    for (int j = 0; j < MAX_SIZE; j++)
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
                     int dataPackSize = 0;
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
+                    
+                    print_buf("Data Pack",dataPack,dataPackSize);
+                    
                     if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
                     { //wait for the return value
                         printf("Error writting mid control packet");
@@ -204,7 +212,7 @@ int interface()
                 unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
-                printf("Read message with %d\n",sizeOfStartTransmition);
+                printf("Read message with %d\n", sizeOfStartTransmition);
 
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
@@ -212,7 +220,7 @@ int interface()
                 while (!eof)
                 {
                     sizeOfMessage = llread(app.fileDescriptor, message);
-                    printf("Read message with %d\n",sizeOfMessage);
+                    printf("Read message with %d\n", sizeOfMessage);
 
                     if (sizeOfMessage == 0)
                     {
@@ -237,8 +245,9 @@ int interface()
                     printf("%x", allMessages[i]);
                 }
                 */
-                FILE *file = fopen((char *) fileName, "wb+");
-                if(file == NULL){
+                FILE *file = fopen((char *)fileName, "wb+");
+                if (file == NULL)
+                {
                     printf("Error oppenning file to write!\n");
                     return -1;
                 }
