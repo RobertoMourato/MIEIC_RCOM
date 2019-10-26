@@ -218,6 +218,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
         else
         {
             data_frame[data_frame_inside_counter] = buffer[i];
+            data_frame_inside_counter++;
         }
     }
     if (strlen((char *)BCC_data_stuffed) == 1)
@@ -234,8 +235,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
     data_frame[data_frame_size] = FLAG;
 
     printf("data frame size: %ld\n", sizeof(data_frame));
-    printf("size %d\n",data_frame_size);
-    print_buf("to pass: ", data_frame, data_frame_size);
+    print_buf("to pass: ", data_frame, sizeof(data_frame));
 
     (void)signal(SIGALRM, alarm_handler);
 
@@ -244,20 +244,20 @@ int llwrite(int fd, unsigned char *buffer, int length)
     {
         if (flag)
         { // this flag is not from this function I think
-            printf("Writing data_frame\n");
+            printf("Writing data_frame");
             res = write(fd, data_frame, sizeof(data_frame));
             if (res < 0)
             {
                 printf("Error writting to port!\n");
                 return -1;
             }
-            printf("going to read control field sent from read\n");
+            printf("going to read control field sent from read");
+            unsigned char control_field = read_control_field(fd);
             alarm(layerPressets.timeout);
             flag = 0;
-            unsigned char control_field = read_control_field(fd);
             if ((data_frame[2] == NS_0 && control_field == RR1 )|| (data_frame[2] == NS_1 && control_field == RR0))
             {
-                printf("control field from write and read compatible");
+                printf("control field from write and read compatable");
                 num_frame = num_frame ^ 1;
                 alarm(0);
                 return 0;
