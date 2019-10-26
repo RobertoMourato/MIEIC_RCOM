@@ -227,22 +227,22 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     if (strlen((char *)BCC_data_stuffed) == 1)
     {
-        data_frame[data_frame_size - 1] = BCC_data;
+        data_frame[data_frame_size - 2] = BCC_data;
     }
     else if (strlen((char *)BCC_data_stuffed) == 2)
     {
         data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
-        data_frame[data_frame_size - 2] = BCC_data_stuffed[0];
-        data_frame[data_frame_size - 1] = BCC_data_stuffed[1];
+        data_frame[data_frame_size - 3] = BCC_data_stuffed[0];
+        data_frame[data_frame_size - 2] = BCC_data_stuffed[1];
     }
 
-    data_frame[data_frame_size] = FLAG;
+    data_frame[data_frame_size-1] = FLAG;
     
     //para frame todo
     for(int i = 0; i < data_frame_size; ++i)
     fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
 
-    printf("data frame size: %ld\n", sizeof(data_frame));
+    printf("data frame size: %li\n", strlen((char *)data_frame));
     print_buf("to pass: ", data_frame, sizeof(data_frame));
 
     (void)signal(SIGALRM, alarm_handler);
