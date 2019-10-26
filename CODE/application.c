@@ -98,12 +98,13 @@ int interface()
                 char *controlPack;
 
                 //vars RECEIVER
-                int len;
-                char *filename, *filesize, buf[4 + MAX_SIZE];
+                //int len;
+               // char *filename,  buf[4 + MAX_SIZE];
+				//char *filesize;
                 int eof;
-                int L1;
-                int L2;
-                int messageCount;
+               // int L1;
+               // int L2;
+                //int messageCount;
                 // char * fileFinal;  //to store all the data
 
                 //vars common
@@ -199,9 +200,9 @@ int interface()
                 off_t sizeOfAllMessages = 0;
                 off_t aux = 0;
 
-                unsigned char *startTransmition;
+                unsigned char *startTransmition = (unsigned char *)malloc(MAX_SIZE);
                 unsigned char *message;
-                unsigned char *fileName;
+                unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
@@ -240,7 +241,7 @@ int interface()
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
-                printf("%zd\n", (off_t)filesize);
+                printf("%zd\n", (off_t)sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);
                 if (res != 0)
@@ -313,7 +314,7 @@ int interface()
                 free(filename);
                 free(filesize);
                 //todo write file 
-                /*
+                
                 //write file on the OS 
                 f = fopen(filename,"wb+");
                 if(f == NULL){

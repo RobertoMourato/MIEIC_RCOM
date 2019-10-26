@@ -18,9 +18,9 @@
 #define SET 0x03
 #define UA 0x07
 #define DISC 0x0B
-#define RR0 0x05 
+#define RR0 0x05
 #define REJ0 0x01  
-#define RR1 0x85  
+#define RR1 0x85 
 #define REJ1 0x81 
 
 #define C1 0x01
@@ -74,7 +74,6 @@ typedef struct
 {
     supervision_state_t state;
 } supervision_instance_data_t;
-
 
 /**
  * @brief set linklayer data 
@@ -138,6 +137,10 @@ unsigned char BCC_make(char * buffer, int size);
  */
 unsigned char * BCC_stuffing(unsigned char BCC);
 
-unsigned char read_control_field(int fd);
+void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
+int endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader);
+int checkBCC2(unsigned char *message, int sizeMessage);
+void sendControlMessage(int fd, unsigned char C);
 
 #endif // UTILS_H_

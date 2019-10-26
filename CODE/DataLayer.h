@@ -24,7 +24,7 @@ int llwrite(int fd, char *buffer, int length);
  * @param buffer char array received
  * @return array length received -1 in error case
  */
-int llread(int fd, char *buffer);
+int llread(int fd, unsigned char *buffer);
 
 /**
  * @brief close serial port
