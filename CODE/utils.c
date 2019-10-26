@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "utils.h"
 #include "error.h"
@@ -19,13 +20,13 @@ void setLinkLayer(linkLayer *linkLayer,char port[]){
     linkLayer->numTransmissions = ATEMPTS;
 }
 
-char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLen){
+unsigned char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLen){
     
-    unsigned int L1 = sizeof(filesize);
+    unsigned int L1 = ceil(log2(filesize)/8);
     unsigned int L2 = strlen(path);
-
     *controlPackLen = 5 + L1 + L2; //5 = C + T1 + L1 + T2 + L2 + (char) path length is byte 
-    char * controlPacket = (char *)malloc(*controlPackLen);
+    printf("control pack len  %d\n",5 + L1 + L2);
+    unsigned char * controlPacket = (unsigned char *)malloc(*controlPackLen);
 
     char c; 
     switch(type){
@@ -39,18 +40,24 @@ char * makeControlPacket(int type, char path[],off_t filesize,int *controlPackLe
     controlPacket[0] = c;  //C
     controlPacket[1] = T1;  //T1
     controlPacket[2] = L1;  //L1
-     *(off_t*)(controlPacket + 3 )= filesize; //V1 
+    unsigned n = L1; 
+    for(unsigned int i = 0; i< L1 ; i++){ //V1 
+        n--;
+        controlPacket[3+i]= (filesize >> 8 *n) & 0xFF;
+    }
     controlPacket[3+L1] = T2;  //T2
     controlPacket[4+L1] = (char) L2; //L2
-    strcat((char*)controlPacket+5+L1,path); //V2
+    for(unsigned int i = 0; i< L2;i++){
+        controlPacket[5+L1+i]= path[i];
+    }
 
     return controlPacket;
 }
 
-char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer){
+unsigned char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer){
 
     *dataPackLen = 4 + strlen(data); // C+N+L1+L2
-    char * dataPacket = (char *)malloc( *dataPackLen);
+    unsigned char * dataPacket = (unsigned char *)malloc( *dataPackLen);
 
     dataPacket[0]= C1;
     dataPacket[1]= linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
@@ -238,7 +245,7 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack){
 }
 
 
-unsigned char BCC_make(char * buffer, int size)
+unsigned char BCC_make(unsigned char * buffer, int size)
 {
     unsigned char BCC;
     BCC = buffer[0];
@@ -432,4 +439,13 @@ void sendControlMessage(int fd, unsigned char C)
   message[3] = message[1] ^ message[2];
   message[4] = FLAG;
   write(fd, message, 5);
+}
+
+void print_buf(const char *title, unsigned char *buf, size_t buf_len)
+{
+    size_t i = 0;
+    fprintf(stdout, "%s\n", title);
+    for(i = 0; i < buf_len; ++i)
+    fprintf(stdout, "%02X%s", buf[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+    printf("\n");
 }

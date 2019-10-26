@@ -1,7 +1,7 @@
 #ifndef ALARM_H_
 #define ALARM_H_
 
-unsigned int attempt = 1;
+unsigned int attempt = 0;
 unsigned int flag = 1;
 
 void alarm_handler(/*int signo*/)

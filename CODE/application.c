@@ -79,8 +79,10 @@ int interface()
                     app.status = RECEIVER;
                 //do llopen and store on descripter
                 app.fileDescriptor = llopen(portNr, openType);
-                if (app.fileDescriptor < 0)
+                if (app.fileDescriptor < 0){
+                    printf("Error Openning!");
                     exit(ERR_LLOPEN);
+                }
                 //set port as oppenned
                 open_flag = TRUE;
             }
@@ -95,17 +97,9 @@ int interface()
                 char path[255];
                 struct stat metadata;
                 FILE *f;
-                char *controlPack;
+                unsigned char *controlPack;
 
-                //vars RECEIVER
-                //int len;
-                //char *filename, buf[4 + MAX_SIZE];
-                //char*filesize;
                 int eof;
-                //int L1;
-                //int L2;
-                //int messageCount;
-                // char * fileFinal;  //to store all the data
 
                 //vars common
                 unsigned char *fileData;
@@ -152,7 +146,9 @@ int interface()
                 //send PH Data start
                 int controlPackSize = 0;
                 controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
-                printf("Controll pack size %d - %s\n", controlPackSize,controlPack);
+                printf("Controll pack size %d\n", controlPackSize);
+                
+                print_buf("Control",controlPack,controlPackSize);
 
                 //START WRITTING STUFF
                 printf("Writing Start Control pack...\n");
@@ -173,7 +169,7 @@ int interface()
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
                     int dataPackSize = 0;
-                    char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
+                    unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
                     if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
                     { //wait for the return value
                         printf("Error writting mid control packet");

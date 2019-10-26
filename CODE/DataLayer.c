@@ -101,7 +101,9 @@ int llopen(int port, int type)
             if (flag)
             {
                 //SENDING SET
+                printf("attempt %d...\n",attempt);
                 printf("Sending SET...\n");
+                print_buf("SET",set,5);
                 res = write(fd, set, 5);
                 if (res < 0)
                     exit(ERR_WR);
@@ -122,10 +124,11 @@ int llopen(int port, int type)
                     turnoff_alarm();
                     //alarm(0);
                     printf("Passei corretamente!\n");
-                    break;
+                    return 0;
                 }
             }
         }
+        return -1;
         break;
     case RECEIVER:
         //RECEIVE  SET - AND CHECK
@@ -148,6 +151,7 @@ int llopen(int port, int type)
 
         //SEND UA
         printf("Sending UA...\n");
+        print_buf("UA",ua,5);
         res = write(fd, ua, 5);
         if (res < 0)
             exit(ERR_WR);
@@ -159,10 +163,11 @@ int llopen(int port, int type)
 }
 
 //PROTIPO DO ANDY
-int llwrite(int fd, char *buffer, int length)
+int llwrite(int fd, unsigned char *buffer, int length)
 {
+    print_buf("Received: ",buffer,length);
     int res;
-    char *buf[255];
+    unsigned char *buf[255];
     unsigned char BCC_data;
     int data_frame_size = length + 6;
     unsigned char *BCC_data_stuffed = (unsigned char *)malloc((sizeof(unsigned char)) * 2);
@@ -229,6 +234,7 @@ int llwrite(int fd, char *buffer, int length)
     data_frame[data_frame_size] = FLAG;
 
     printf("data frame size: %ld\n", sizeof(data_frame));
+    print_buf("to pass: ",data_frame,sizeof(data_frame));
 
     (void)signal(SIGALRM, alarm_handler);
 

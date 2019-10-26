@@ -90,7 +90,7 @@ void setLinkLayer(linkLayer *linklayer,char port[]);
  * @param controlPackLen length of the control pack made
  * @return char * with control packet
  */
-char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
+unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
 
 /**
  * @brief make control packet 
@@ -100,7 +100,7 @@ char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
  * @param linkLayer linkpressets so that i can acsses message seq number count
  * @return char * with control packet
  */
-char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer);
+unsigned char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer);
 
 /**
  * @brief set reception state machine 
@@ -129,7 +129,7 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack);
  * @param size //todo
  * @return //todo
  */
-unsigned char BCC_make(char * buffer, int size);
+unsigned char BCC_make(unsigned char * buffer, int size);
 
 /**
  * @brief stuffing bcc
@@ -147,5 +147,7 @@ int endReached(unsigned char * message, int sizeOfMessage, unsigned char * start
 unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader);
 int checkBCC2(unsigned char *message, int sizeMessage);
 void sendControlMessage(int fd, unsigned char C);
+
+void print_buf(const char *title, unsigned char *buf, size_t buf_len);
 
 #endif // UTILS_H_

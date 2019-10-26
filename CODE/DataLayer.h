@@ -16,7 +16,7 @@ int llopen(int port, int type);
  * @param length array lentgh
  * @return return number of characters written or -1 in error case 
  */
-int llwrite(int fd, char *buffer, int length);
+int llwrite(int fd, unsigned char *buffer, int length);
 
 /**
  * @brief write from serial port
