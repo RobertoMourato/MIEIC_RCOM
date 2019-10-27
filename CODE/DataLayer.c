@@ -224,6 +224,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
     //só para dados dps de byte stuffing
     for(int i = 0; i < data_frame_size; ++i)
     fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+    
 
     if (strlen((char *)BCC_data_stuffed) == 1)
     {
@@ -238,12 +239,15 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     data_frame[data_frame_size-1] = FLAG;
     
+    printf("\n");
+    printf("with flag \n");
     //para frame todo
     for(int i = 0; i < data_frame_size; ++i)
     fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+    printf("\n");
 
-    printf("data frame size: %li\n", strlen((char *)data_frame));
-    print_buf("to pass: ", data_frame, sizeof(data_frame));
+    printf("data frame size: %i \n", data_frame_size);
+    print_buf("to pass: ", data_frame, data_frame_size);
 
     (void)signal(SIGALRM, alarm_handler);
 
@@ -253,7 +257,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
         if (flag)
         { // this flag is not from this function I think
             printf("Writing data_frame");
-            res = write(fd, data_frame, sizeof(data_frame));
+            res = write(fd, data_frame, data_frame_size);
             if (res < 0)
             {
                 printf("Error writting to port!\n");
