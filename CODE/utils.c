@@ -75,7 +75,6 @@ unsigned char *makeDatePacket(char data[], int *dataPackLen, off_t filesize, lin
     {
         dataPacket[4+i]=data[i];
     }
-    //strcat((char*)dataPacket+5,data);//P1 ... PK – campo de dados do pacote (K octetos)
 
     //increment sequenceNumber
     linkLayer->sequenceNumber++;
@@ -301,6 +300,7 @@ unsigned char read_control_field(int fd)
     while (!flag && !(SU_state.state == stop))
     {
         read(fd, &part_of_frame, 1);
+        print_buf(" ",&part_of_frame,1);
 
         switch (SU_state.state)
         {

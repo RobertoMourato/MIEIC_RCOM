@@ -71,8 +71,8 @@ int llopen(int port, int type)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
+    newtio.c_cc[VTIME] = VTIMEVAL; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = VMINVAL;  /* blocking read until 5 chars received */
 
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -122,7 +122,6 @@ int llopen(int port, int type)
                 if (machineOpenTransmitter.state == stop)
                 {
                     turnoff_alarm();
-                    //alarm(0);
                     printf("Passei corretamente!\n");
                     return fd;
                 }
@@ -165,7 +164,6 @@ int llopen(int port, int type)
 //PROTIPO DO ANDY
 int llwrite(int fd, unsigned char *buffer, int length)
 {
-    printf("fd == %d", fd);
     print_buf("Received: ", buffer, length);
     int res;
     //unsigned char *buf[255];
@@ -251,6 +249,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     (void)signal(SIGALRM, alarm_handler);
     //install alarm
+    
     while (attempt < layerPressets.numTransmissions)
     {
         if (flag)
@@ -262,15 +261,21 @@ int llwrite(int fd, unsigned char *buffer, int length)
                 printf("Error writting to port!\n");
                 return -1;
             }
+            
             printf("going to read control field sent from read\n");
-            unsigned char control_field = read_control_field(fd);
+            
             alarm(layerPressets.timeout);
             flag = 0;
+           
+            unsigned char control_field = read_control_field(fd);
+           
+            
+
             if ((data_frame[2] == NS_0 && control_field == RR1) || (data_frame[2] == NS_1 && control_field == RR0))
             {
                 printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
-                alarm(0);
+                turnoff_alarm();
                 return 0;
             }
             //read the ACK or NACK choose what to do!
@@ -293,7 +298,7 @@ int llread(int fd, unsigned char *buffer)
 
     while (state != 6)
     {
-        // printf("Reading...\n");
+        printf("Reading...\n");
         read(fd, &packet, 1); //isto esta correto!!!
         printf("%02X\n", packet);
         switch (state)

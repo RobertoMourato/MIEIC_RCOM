@@ -37,6 +37,10 @@
 #define ATEMPTS 3
 #define MAX_SIZE 4
 
+//ALARM 
+#define VTIMEVAL 0   /* inter-character timer unused */
+#define VMINVAL  1   /* blocking read until 5 chars received */
+
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1

@@ -163,7 +163,7 @@ int interface()
                 printf("Writing Start Control pack...\n");
                 if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
                 {
-                    printf("Error writting start control packet");
+                    printf("Error writting start control packet\n");
                     return -1;
                 }
                 
@@ -173,7 +173,6 @@ int interface()
                 {
                     //split data to send
                     char tmpPack[MAX_SIZE-1];
-                    printf("tmp size: %ld\n",strlen(tmpPack));
                     for (int j = 0; j < MAX_SIZE; j++)
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
@@ -183,10 +182,10 @@ int interface()
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
                     
                     print_buf("Data Pack",dataPack,dataPackSize);
-                    
+    
                     if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
                     { //wait for the return value
-                        printf("Error writting mid control packet");
+                        printf("Error writting mid control packet\n");
                         return -1;
                     }
                     
