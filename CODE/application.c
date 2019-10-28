@@ -220,6 +220,8 @@ int interface()
                 printf("Read message with %d\n", sizeOfStartTransmition);
 
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
+                printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
+                printf("fileName: %s\n",fileName);
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
 
                 while (!eof)
@@ -240,16 +242,13 @@ int interface()
 
                     sizeWithNoHeader = 0;
                     message = headerRemoval(message, sizeOfMessage, &sizeWithNoHeader);
+                    //TODO erro ta aqui 
                     memcpy(allMessages + aux, message, sizeWithNoHeader);
                     aux += sizeWithNoHeader;
                 }
-                /*
-                printf("Test Message: \n");
-                for (size_t i = 0; i < sizeOfAllMessages; i++)
-                {
-                    printf("%x", allMessages[i]);
-                }
-                */
+                printf("fileName: %s\n",fileName);
+                printf("allMessages: %s\n",allMessages);
+                print_buf("data",allMessages,sizeOfAllMessages);
                 FILE *file = fopen((char *)fileName, "wb+");
                 if (file == NULL)
                 {
@@ -266,87 +265,6 @@ int interface()
                     return -1;
                 }
 
-                /*
-                //remove nd read flags created on the case before and store the date on a file
-                eof=FALSE;
-                L1 = 0;
-                L2 = 0;
-                messageCount=1;
-                while (!eof)
-                {
-                    //keep reading until gets...
-                    //buf = (char *) malloc(4+MAX_SIZE); //dataHeader + maxsize can port
-                    len = llread(app.fileDescriptor,buf);
-                    if (len < 0)
-                    {
-                        printf("Error reading file");
-                        return -1;
-                    }
-                    switch (buf[0])
-                    {
-                    case C2: //start case
-                        if (buf[1] == T1) //Type
-                        {
-                            L1 = (int)buf[2];
-                            filesize = (char *)malloc(buf[2]); //Length
-                            //cycle read num
-                            for (int i = 0; i < L1; i++)
-                            {
-                                strcat(filesize, &buf[3+i]);
-                            }
-                            //aloc mememory to store file passed
-                            fileData = (unsigned char *)malloc((size_t)filesize); //todo check if int is correct
-                        }
-                        if ((buf[3 + L1]) == T2)
-                        {
-                            L2 = (int)buf[L1 + 4];
-                            filename = (char *)malloc(buf[4 + L1]); //Length
-                            for (int i = 0; i < L2; i++)
-                            {
-                                strcat(filename, &buf[5 + L1 + i]);
-                            }
-                        }
-                        //stop processment as control packets dont port file chunks
-                        break;
-                    case C1: //case it receives data
-                        //get data
-                        if(buf[1] != messageCount){ //get N 
-                            printf("received wrong seq num packet");
-                        }
-                        //get size of the next packets
-                        //check if L1 and L2 matches with data len received 
-                        
-                        //memcpy(fileFinal+index,);
-                        //strcat()
-                       
-                        break;
-                    case C3: //case it ends processing packet
-                        eof = TRUE;
-                        //doesnt need to read, just for confirmation????
-                        //TODO ask
-                    }
-                }
-                free(fileData);
-                free(filename);
-                free(filesize);
-                //todo write file 
-                
-                //write file on the OS 
-                f = fopen(filename,"wb+");
-                if(f == NULL){
-                    printf("Error oppenning file to write!\n");
-                    return -1;
-                }
-                fwrite((void*)fileFinal,1,(off_t)filesize,f);
-                printf("%zd\n", (off_t)filesize);
-                printf("New file created\n");
-                res = fclose(f);
-                if (res != 0)
-                {
-                    printf("Error closing file!\n");
-                    return -1;
-                }
-                */
             }
             break;
         case 2:

@@ -375,19 +375,33 @@ unsigned char *startFileName(unsigned char *start)
 
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsigned char *startTransmition)
 {
-    int aux = (int)startTransmition[8];
-    int i = 0;
-    unsigned char *fileNameAux = (unsigned char *)malloc(aux + 1);
+    int aux = (int) startTransmition[2];
+    int namesize = 0;
+    //int i = 0; 
+    unsigned char * auxSize = malloc(aux);
+    unsigned char * auxName;
+    //Get filesize
+    if(startTransmition[1] == T1){ 
+       // printf("index %d\n",i);
+       for( int i = 0; i<aux ; i++){
+           auxSize[i]= startTransmition[3+i];
+       }
 
-    while (i < aux)
-    {
-        fileNameAux[i] = startTransmition[i + 9];
-        i++;
     }
-    fileNameAux[aux] = '\0';
+    //Get filename
+    if(startTransmition[4+aux-1] == T2){
+        namesize = (int) startTransmition[5+aux-1]; 
+        auxName = malloc(namesize);
+        for(int i = 0; i<namesize; i++){
+            auxName[i]= startTransmition[6+i];
+        }
+    }
 
-    *fileName = *fileNameAux;
-    *sizeOfAllMessages = (off_t)(startTransmition[3] << 24) | (startTransmition[4] << 16) | (startTransmition[5] << 8) | (startTransmition[6]);
+    //set variables 
+    memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
+    fileName =  realloc(fileName,namesize);
+    memcpy(fileName,auxName,namesize);
+
 }
 
 int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTransmition, int sizeOfStartTransmition)
