@@ -71,8 +71,8 @@ int llopen(int port, int type)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 0;  /* blocking read until 5 chars received */
+    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
 
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -124,7 +124,7 @@ int llopen(int port, int type)
                     turnoff_alarm();
                     //alarm(0);
                     printf("Passei corretamente!\n");
-                    return 0;
+                    return fd;
                 }
             }
         }
@@ -165,6 +165,7 @@ int llopen(int port, int type)
 //PROTIPO DO ANDY
 int llwrite(int fd, unsigned char *buffer, int length)
 {
+    printf( "fd == %d", fd);
     print_buf("Received: ", buffer, length);
     int res;
     //unsigned char *buf[255];
@@ -250,26 +251,25 @@ int llwrite(int fd, unsigned char *buffer, int length)
     print_buf("to pass: ", data_frame, data_frame_size);
 
     (void)signal(SIGALRM, alarm_handler);
-
     //install alarm
     while (attempt < layerPressets.numTransmissions)
     {
         if (flag)
         { // this flag is not from this function I think
-            printf("Writing data_frame");
+            printf("Writing data_frame\n");
             res = write(fd, data_frame, data_frame_size);
             if (res < 0)
             {
                 printf("Error writting to port!\n");
                 return -1;
             }
-            printf("going to read control field sent from read");
+            printf("going to read control field sent from read\n");
             unsigned char control_field = read_control_field(fd);
             alarm(layerPressets.timeout);
             flag = 0;
             if ((data_frame[2] == NS_0 && control_field == RR1 )|| (data_frame[2] == NS_1 && control_field == RR0))
             {
-                printf("control field from write and read compatable");
+                printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
                 alarm(0);
                 return 0;
@@ -283,17 +283,20 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
 int llread(int fd, unsigned char *buffer)
 {
+    printf( "fd = %d\n", fd);
     int *sizeBuffer = 0;
     unsigned char packectReaded;
     unsigned char packet;
     int auxTrama = 0;
     int sendData = FALSE;
     int state = 0;
+    //unsigned char buf[255];
 
     while (state != 6)
     {
-        printf("Reading...\n");
-        read(fd, &packet, 1);
+       // printf("Reading...\n");
+        read(fd, &packet, 1); //isto esta correto!!!
+        printf("%02X\n",packet);
         switch (state)
         {
         case 0:
@@ -311,7 +314,7 @@ int llread(int fd, unsigned char *buffer)
                     state = 0;
             }
             break;
-        case 2:
+        case 2: 
             if (packet == NS_0)
             {
                 auxTrama = 0;
@@ -369,8 +372,10 @@ int llread(int fd, unsigned char *buffer)
             }
             else
             {
+                //TODO ERRO ESTA AQUI
                 buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
                 buffer[*sizeBuffer - 1] = packet;
+                
             }
             break;
         case 5:
