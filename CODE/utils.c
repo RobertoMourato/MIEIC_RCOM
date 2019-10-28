@@ -452,6 +452,7 @@ void sendControlMessage(int fd, unsigned char C)
     message[2] = C;
     message[3] = message[1] ^ message[2];
     message[4] = FLAG;
+    print_buf("Sent control message: ", message, sizeof(message));
     write(fd, message, 5);
 }
 

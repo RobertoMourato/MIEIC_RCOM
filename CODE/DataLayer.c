@@ -165,7 +165,7 @@ int llopen(int port, int type)
 //PROTIPO DO ANDY
 int llwrite(int fd, unsigned char *buffer, int length)
 {
-    printf( "fd == %d", fd);
+    printf("fd == %d", fd);
     print_buf("Received: ", buffer, length);
     int res;
     //unsigned char *buf[255];
@@ -223,9 +223,8 @@ int llwrite(int fd, unsigned char *buffer, int length)
         }
     }
     //só para dados dps de byte stuffing
-    for(int i = 0; i < data_frame_size; ++i)
-    fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
-    
+    for (int i = 0; i < data_frame_size; ++i)
+        fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
 
     if (strlen((char *)BCC_data_stuffed) == 1)
     {
@@ -238,13 +237,13 @@ int llwrite(int fd, unsigned char *buffer, int length)
         data_frame[data_frame_size - 2] = BCC_data_stuffed[1];
     }
 
-    data_frame[data_frame_size-1] = FLAG;
-    
+    data_frame[data_frame_size - 1] = FLAG;
+
     printf("\n");
     printf("with flag \n");
     //para frame todo
-    for(int i = 0; i < data_frame_size; ++i)
-    fprintf(stdout, "%02X%s", data_frame[i],( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+    for (int i = 0; i < data_frame_size; ++i)
+        fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
     printf("\n");
 
     printf("data frame size: %i \n", data_frame_size);
@@ -267,7 +266,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
             unsigned char control_field = read_control_field(fd);
             alarm(layerPressets.timeout);
             flag = 0;
-            if ((data_frame[2] == NS_0 && control_field == RR1 )|| (data_frame[2] == NS_1 && control_field == RR0))
+            if ((data_frame[2] == NS_0 && control_field == RR1) || (data_frame[2] == NS_1 && control_field == RR0))
             {
                 printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
@@ -277,13 +276,13 @@ int llwrite(int fd, unsigned char *buffer, int length)
             //read the ACK or NACK choose what to do!
         }
     }
-     printf("ola\n");
+    printf("ola\n");
     return -1;
 }
 
 int llread(int fd, unsigned char *buffer)
 {
-    printf( "fd = %d\n", fd);
+    printf("fd = %d\n", fd);
     int sizeBuffer = 0;
     unsigned char packectReaded;
     unsigned char packet;
@@ -294,9 +293,9 @@ int llread(int fd, unsigned char *buffer)
 
     while (state != 6)
     {
-       // printf("Reading...\n");
+        // printf("Reading...\n");
         read(fd, &packet, 1); //isto esta correto!!!
-        printf("%02X\n",packet);
+        printf("%02X\n", packet);
         switch (state)
         {
         case 0:
@@ -314,7 +313,7 @@ int llread(int fd, unsigned char *buffer)
                     state = 0;
             }
             break;
-        case 2: 
+        case 2:
             if (packet == NS_0)
             {
                 auxTrama = 0;
@@ -347,23 +346,34 @@ int llread(int fd, unsigned char *buffer)
                 if (checkBCC2(buffer, sizeBuffer))
                 {
                     if (auxTrama == 0)
+                    {
                         sendControlMessage(fd, RR1);
+                        printf("Enviou RR1\n");
+                    }
                     else
+                    {
                         sendControlMessage(fd, RR0);
+                        printf("Enviou RR0\n");
+                    }
 
                     state = 6;
                     sendData = TRUE;
-                    printf("Enviou RR, T: %d\n", auxTrama);
+                    printf("auxTrama, T: %d\n", auxTrama);
                 }
                 else
                 {
                     if (auxTrama == 0)
+                    {
                         sendControlMessage(fd, REJ1);
+                        printf("Enviou REJ1\n");
+                    }
                     else
+                    {
                         sendControlMessage(fd, REJ0);
+                        printf("Enviou REJ0\n");
+                    }
                     state = 6;
                     sendData = FALSE;
-                    printf("Enviou REJ, T: %d\n", auxTrama);
                 }
             }
             else if (packet == ESC)
@@ -373,9 +383,8 @@ int llread(int fd, unsigned char *buffer)
             else
             {
                 buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
-                printf("buf size: %lum\n",sizeof(buffer));
+                printf("buf size: %lum\n", sizeof(buffer));
                 buffer[sizeBuffer - 1] = packet;
-                
             }
             break;
         case 5:
@@ -404,7 +413,7 @@ int llread(int fd, unsigned char *buffer)
     }
 
     printf("Message size: %d\n", sizeBuffer);
-    print_buf("Message",buffer,sizeBuffer);
+    print_buf("Message", buffer, sizeBuffer);
     //message tem BCC2 no fim
     buffer = (unsigned char *)realloc(buffer, sizeBuffer - 1);
 

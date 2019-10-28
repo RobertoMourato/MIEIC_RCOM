@@ -214,7 +214,7 @@ int interface()
                 off_t aux = 0;
 
                 unsigned char *startTransmition = (unsigned char *)malloc(255);
-                unsigned char *message = (unsigned char *)malloc(0);;
+                unsigned char *message = (unsigned char *)malloc(0);
                 unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
