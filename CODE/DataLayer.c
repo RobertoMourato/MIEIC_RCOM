@@ -284,7 +284,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
 int llread(int fd, unsigned char *buffer)
 {
     printf( "fd = %d\n", fd);
-    int *sizeBuffer = 0;
+    int sizeBuffer = 0;
     unsigned char packectReaded;
     unsigned char packet;
     int auxTrama = 0;
@@ -344,7 +344,7 @@ int llread(int fd, unsigned char *buffer)
         case 4:
             if (packet == FLAG)
             {
-                if (checkBCC2(buffer, *sizeBuffer))
+                if (checkBCC2(buffer, sizeBuffer))
                 {
                     if (auxTrama == 0)
                         sendControlMessage(fd, RR1);
@@ -372,9 +372,9 @@ int llread(int fd, unsigned char *buffer)
             }
             else
             {
-                //TODO ERRO ESTA AQUI
-                buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
-                buffer[*sizeBuffer - 1] = packet;
+                buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
+                printf("buf size: %lum\n",sizeof(buffer));
+                buffer[sizeBuffer - 1] = packet;
                 
             }
             break;
@@ -382,15 +382,15 @@ int llread(int fd, unsigned char *buffer)
             //printf("5state\n");
             if (packet == FLAG_NEXT)
             {
-                buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
-                buffer[*sizeBuffer - 1] = FLAG;
+                buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
+                buffer[sizeBuffer - 1] = FLAG;
             }
             else
             {
                 if (packet == ESC_NEXT)
                 {
-                    buffer = (unsigned char *)realloc(buffer, ++(*sizeBuffer));
-                    buffer[*sizeBuffer - 1] = ESC;
+                    buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
+                    buffer[sizeBuffer - 1] = ESC;
                 }
                 else
                 {
@@ -403,11 +403,12 @@ int llread(int fd, unsigned char *buffer)
         }
     }
 
-    printf("Message size: %d\n", *sizeBuffer);
+    printf("Message size: %d\n", sizeBuffer);
+    print_buf("Message",buffer,sizeBuffer);
     //message tem BCC2 no fim
-    buffer = (unsigned char *)realloc(buffer, *sizeBuffer - 1);
+    buffer = (unsigned char *)realloc(buffer, sizeBuffer - 1);
 
-    *sizeBuffer = *sizeBuffer - 1;
+    sizeBuffer = sizeBuffer - 1;
     if (sendData)
     {
         if (auxTrama == num_frame)
@@ -415,11 +416,11 @@ int llread(int fd, unsigned char *buffer)
             num_frame ^= 1;
         }
         else
-            *sizeBuffer = 0;
+            sizeBuffer = 0;
     }
     else
-        *sizeBuffer = 0;
-    return *sizeBuffer;
+        sizeBuffer = 0;
+    return sizeBuffer;
 }
 
 int llclose(int fd)
