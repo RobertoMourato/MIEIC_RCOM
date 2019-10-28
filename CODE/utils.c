@@ -400,7 +400,7 @@ int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTr
     {
         if (message[0] == C3)
         {
-            for (size_t i = 1; i <= (size_t)sizeOfMessage; i++)
+            for (size_t i = 1; i < (size_t)sizeOfMessage; i++)
             {
                 if (message[i] != startTransmition[i])
                 {
