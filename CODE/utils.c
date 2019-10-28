@@ -388,15 +388,18 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
        }
 
     }
+    printf("aux: %d\n",aux);
+    printf("auxSize: %s\n",auxSize);
     //Get filename
     if(startTransmition[4+aux-1] == T2){
         namesize = (int) startTransmition[5+aux-1]; 
         auxName = malloc(namesize);
         for(int i = 0; i<namesize; i++){
-            auxName[i]= startTransmition[6+i];
+            auxName[i]= startTransmition[6+aux-1+i];
         }
     }
-
+    printf("name: %d\n",namesize);
+    printf("auxName: %s\n",auxName);
     //set variables 
     memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
     fileName =  realloc(fileName,namesize);

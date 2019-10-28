@@ -298,9 +298,9 @@ int llread(int fd, unsigned char *buffer)
 
     while (state != 6)
     {
-        printf("Reading...\n");
+        //printf("Reading...\n");
         read(fd, &packet, 1); //isto esta correto!!!
-        printf("%02X\n", packet);
+       // printf("%02X\n", packet);
         switch (state)
         {
         case 0:
