@@ -72,7 +72,7 @@ int llopen(int port, int type)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME] = VTIMEVAL; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = VMINVAL;  /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN] = VMINVAL;   /* blocking read until 5 chars received */
 
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -249,7 +249,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     (void)signal(SIGALRM, alarm_handler);
     //install alarm
-    
+
     while (attempt < layerPressets.numTransmissions)
     {
         if (flag)
@@ -261,15 +261,13 @@ int llwrite(int fd, unsigned char *buffer, int length)
                 printf("Error writting to port!\n");
                 return -1;
             }
-            
+
             printf("going to read control field sent from read\n");
-            
+
             alarm(layerPressets.timeout);
             flag = 0;
-           
+
             unsigned char control_field = read_control_field(fd);
-           
-            
 
             if ((data_frame[2] == NS_0 && control_field == RR1) || (data_frame[2] == NS_1 && control_field == RR0))
             {
@@ -300,7 +298,7 @@ int llread(int fd, unsigned char *buffer)
     {
         //printf("Reading...\n");
         read(fd, &packet, 1); //isto esta correto!!!
-       // printf("%02X\n", packet);
+                              // printf("%02X\n", packet);
         switch (state)
         {
         case 0:
@@ -441,10 +439,6 @@ int llclose(int fd)
 {
     int res;
     char buf[255];
-    int flag = TRUE;
-
-    //flush
-    tcflush(fd, TCIOFLUSH);
 
     switch (portState)
     {
@@ -463,7 +457,6 @@ int llclose(int fd)
                     exit(ERR_WR);
 
                 alarm(layerPressets.timeout);
-                flag = 0;
 
                 //WAIT FOR DISC ACK
                 printf("Receiving RECEIVER DISC...\n");
@@ -476,14 +469,25 @@ int llclose(int fd)
                         turnoff_alarm();
                         printf("Succsefully passed DISC\n");
                         //SEND UA
-                        break;
+                        printf("Sending UA...\n");
+
+                        res = write(fd, disc, 5);
+                        if (res < 0)
+                            exit(ERR_WR);
+                        sleep(1);
+                        //disconnect port
+                        printf("Closing Port...\n");
+                        if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+                        {
+                            perror("tcsetattr");
+                            return -1;
+                        }
+
+                        close(fd);
+                        return 1;
                     }
                 }
             }
-            printf("Sending UA...\n");
-            res = write(fd, disc, 5);
-            if (res < 0)
-                exit(ERR_WR);
         }
         break;
 
@@ -515,18 +519,18 @@ int llclose(int fd)
             if (machineCloseReceiver.state == stop)
                 printf("Succsefully passed UA\n");
         }
+        sleep(1);
+        //disconnect port
+        printf("Closing Port...\n");
+        if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+        {
+            perror("tcsetattr");
+            return -1;
+        }
 
+        close(fd);
+        return 1;
         break;
     }
-
-    sleep(1);
-    //disconnect port
-    if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
-    {
-        perror("tcsetattr");
-        return -1;
-    }
-
-    close(fd);
-    return 1;
+    return -1;
 }
