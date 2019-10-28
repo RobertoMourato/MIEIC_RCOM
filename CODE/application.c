@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "utils.h"
 #include "error.h"
@@ -126,8 +127,10 @@ int interface()
                 stat(path, &metadata);
                 printf("This file has %ld bytes \n", metadata.st_size);
                 //alloc memory to store the image
+                
                 fileData = (unsigned char *)malloc(metadata.st_size);
                 res = fread(fileData, sizeof(unsigned char), metadata.st_size, f);
+                
                 if (res < 0)
                 {
                     printf("Error reading file!\n");
@@ -145,10 +148,11 @@ int interface()
                 else
                     printf("File closed...\n");
 
-                printf("It will make %d File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
+                //printf("It will make %f File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
                 //send PH Data start
                 
                 int controlPackSize = 0;
+                
                 controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
                 printf("Controll pack size %d\n", controlPackSize);
 
@@ -164,16 +168,18 @@ int interface()
                 }
                 
                 //while splitting the file
+                //TODO APPLY MOD
                 for (int i = 0; i < ((int)metadata.st_size) / MAX_SIZE + 1; i++)
                 {
                     //split data to send
-                    char *tmpPack;
-                    tmpPack = (char *)malloc(MAX_SIZE);
+                    char tmpPack[MAX_SIZE-1];
+                    printf("tmp size: %ld\n",strlen(tmpPack));
                     for (int j = 0; j < MAX_SIZE; j++)
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
                     int dataPackSize = 0;
+                    printf("tmp size: %ld\n",strlen(tmpPack));
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
                     
                     print_buf("Data Pack",dataPack,dataPackSize);
@@ -183,7 +189,7 @@ int interface()
                         printf("Error writting mid control packet");
                         return -1;
                     }
-                    free(tmpPack);
+                    
                 }
                 //send PH Data start
                 controlPackSize = 0;
