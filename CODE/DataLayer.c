@@ -169,10 +169,10 @@ int llwrite(int fd, unsigned char *buffer, int length)
     //unsigned char *buf[255];
     unsigned char BCC_data;
     int data_frame_size = length + 6;
-    unsigned char *BCC_data_stuffed = (unsigned char *)malloc((sizeof(unsigned char)) * 2);
+    
     unsigned char *data_frame = (unsigned char *)malloc((sizeof(unsigned char)) * data_frame_size);
     BCC_data = BCC_make(buffer, length);
-    BCC_data_stuffed = BCC_stuffing(BCC_data);
+    
 
     data_frame[0] = FLAG;
     data_frame[1] = A_3;
@@ -223,18 +223,31 @@ int llwrite(int fd, unsigned char *buffer, int length)
     //só para dados dps de byte stuffing
     for (int i = 0; i < data_frame_size; ++i)
         fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
-
-    if (strlen((char *)BCC_data_stuffed) == 1)
+    
+    
+    
+    if (BCC_data == FLAG)
+    {
+        printf("inside bcc mode1");
+        data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
+        data_frame[data_frame_size - 3] = ESC;
+        data_frame[data_frame_size - 2] = FLAG_NEXT;
+        
+    }
+    else if (BCC_data == ESC)
+    {
+        printf("inside bcc mode 2");
+        data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
+        data_frame[data_frame_size - 3] = ESC;
+        data_frame[data_frame_size - 2] = ESC_NEXT;
+        
+    }
+    else
     {
         data_frame[data_frame_size - 2] = BCC_data;
     }
-    else if (strlen((char *)BCC_data_stuffed) == 2)
-    {
-        data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
-        data_frame[data_frame_size - 3] = BCC_data_stuffed[0];
-        data_frame[data_frame_size - 2] = BCC_data_stuffed[1];
-    }
-
+    
+  
     data_frame[data_frame_size - 1] = FLAG;
 
     printf("\n");
@@ -279,6 +292,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
             //read the ACK or NACK choose what to do!
         }
     }
+    free(data_frame);
     printf("ola\n");
     return -1;
 }
