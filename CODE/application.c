@@ -257,8 +257,8 @@ int interface()
                     //free(message);
                 }
                 printf("fileName: %s\n",fileName);
-                //printf("allMessages: %s\n",allMessages);
-                //print_buf("data",allMessages,sizeOfAllMessages);
+                printf("allMessages: %s\n",allMessages);
+                print_buf("data",allMessages,sizeOfAllMessages);
                 FILE *file = fopen((char *)fileName, "wb+");
                 if (file == NULL)
                 {
