@@ -400,7 +400,7 @@ int llread(int fd, unsigned char *buffer)
             else
             {
                 buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
-                printf("buf size: %lum\n", sizeof(buffer));
+                //printf("buf size: %lum\n", sizeof(buffer));
                 buffer[sizeBuffer - 1] = packet;
             }
             break;
@@ -430,10 +430,12 @@ int llread(int fd, unsigned char *buffer)
     }
 
     printf("Message size: %d\n", sizeBuffer);
-    print_buf("Message", buffer, sizeBuffer);
+    print_buf("llread", buffer, sizeBuffer);
     //message tem BCC2 no fim
     buffer = (unsigned char *)realloc(buffer, sizeBuffer - 1);
 
+    print_buf("after", buffer, sizeBuffer);
+    
     sizeBuffer = sizeBuffer - 1;
     if (sendData)
     {

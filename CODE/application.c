@@ -172,7 +172,7 @@ int interface()
                 for (int i = 0; i < ((int)metadata.st_size) / MAX_SIZE + 1; i++)
                 {
                     //split data to send
-                    char tmpPack[MAX_SIZE-1];
+                    char tmpPack[MAX_SIZE-1]; //todo if file is shorter 
                     for (int j = 0; j < MAX_SIZE; j++)
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
@@ -222,12 +222,14 @@ int interface()
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
                 printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
                 printf("fileName: %s\n",fileName);
+                
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
 
                 while (!eof)
                 {
                     sizeOfMessage = llread(app.fileDescriptor, message);
                     printf("Read message with %d\n", sizeOfMessage);
+                    print_buf("message with header",message,sizeOfMessage);
 
                     if (sizeOfMessage == 0)
                     {
@@ -242,13 +244,20 @@ int interface()
 
                     sizeWithNoHeader = 0;
                     message = headerRemoval(message, sizeOfMessage, &sizeWithNoHeader);
+                   
                     //TODO erro ta aqui 
-                    memcpy(allMessages + aux, message, sizeWithNoHeader);
+                    print_buf("New message",message,sizeOfMessage);
+                    for(int i =0; i<sizeWithNoHeader; i++){
+                        allMessages[i+aux]= message[i];
+                    }
+                    //memcpy(allMessages + aux, message, sizeWithNoHeader);
                     aux += sizeWithNoHeader;
+
+                    free(message);
                 }
                 printf("fileName: %s\n",fileName);
-                printf("allMessages: %s\n",allMessages);
-                print_buf("data",allMessages,sizeOfAllMessages);
+                //printf("allMessages: %s\n",allMessages);
+                //print_buf("data",allMessages,sizeOfAllMessages);
                 FILE *file = fopen((char *)fileName, "wb+");
                 if (file == NULL)
                 {
@@ -256,7 +265,7 @@ int interface()
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
-                printf("%zd\n", (off_t)sizeOfAllMessages);
+                printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);
                 if (res != 0)
