@@ -96,6 +96,8 @@ void setLinkLayer(linkLayer *linklayer,char port[]);
  */
 unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
 
+int sendDataPackage(int fd, int N, const char* buffer, int length);
+
 /**
  * @brief make control packet 
  * @param path filename path 
@@ -104,7 +106,7 @@ unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlP
  * @param linkLayer linkpressets so that i can acsses message seq number count
  * @return char * with control packet
  */
-unsigned char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer);
+unsigned char * makeDatePacket(unsigned char *data,int *dataPackLen,off_t filesize,linkLayer *linkLayer);
 
 /**
  * @brief set reception state machine 
