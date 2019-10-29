@@ -212,8 +212,7 @@ int interface()
                 off_t sizeOfAllMessages = 0;
                 off_t aux = 0;
 
-                unsigned char *startTransmition = (unsigned char *)malloc(255);
-                unsigned char *message = (unsigned char *)malloc(0);
+                unsigned char *startTransmition = (unsigned char *)malloc(0);
                 unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
@@ -227,9 +226,10 @@ int interface()
 
                 while (!eof)
                 {
+                    unsigned char *message = (unsigned char *)malloc(0);
                     sizeOfMessage = llread(app.fileDescriptor, message);
                     printf("Read message with %d\n", sizeOfMessage);
-                    print_buf("message with header",message,sizeOfMessage);
+                    print_buf("message with header",message,sizeOfMessage+1);
 
                     if (sizeOfMessage == 0)
                     {
@@ -250,10 +250,9 @@ int interface()
                     for(int i =0; i<sizeWithNoHeader; i++){
                         allMessages[i+aux]= message[i];
                     }
-                    //memcpy(allMessages + aux, message, sizeWithNoHeader);
+                    memcpy(allMessages + aux, message, sizeWithNoHeader);
                     aux += sizeWithNoHeader;
-
-                    free(message);
+                    //free(message);
                 }
                 printf("fileName: %s\n",fileName);
                 //printf("allMessages: %s\n",allMessages);
