@@ -177,6 +177,7 @@ int interface()
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
+                    free(fileData);
                     int dataPackSize = 0;
                     printf("tmp size: %ld\n",strlen(tmpPack));
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
@@ -200,6 +201,7 @@ int interface()
                     return -1;
                 }
                 //if any of this fails, process will end
+                free(controlPack);
 
                 break;
             case (RECEIVER):
@@ -213,7 +215,7 @@ int interface()
                 off_t aux = 0;
 
                 unsigned char *startTransmition = (unsigned char *)malloc(255);
-                unsigned char *message = (unsigned char *)malloc(0);
+                unsigned char *message;
                 unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
@@ -227,6 +229,7 @@ int interface()
 
                 while (!eof)
                 {
+                    message = (unsigned char *)malloc(0);
                     sizeOfMessage = llread(app.fileDescriptor, message);
                     printf("Read message with %d\n", sizeOfMessage);
                     print_buf("message with header",message,sizeOfMessage);
@@ -239,6 +242,7 @@ int interface()
                     if (endReached(message, sizeOfMessage, startTransmition, sizeOfStartTransmition))
                     {
                         printf("End Reached!\n");
+                        free(startTransmition);
                         break;
                     }
 
@@ -259,12 +263,14 @@ int interface()
                 //printf("allMessages: %s\n",allMessages);
                 //print_buf("data",allMessages,sizeOfAllMessages);
                 FILE *file = fopen((char *)fileName, "wb+");
+                free(fileName);
                 if (file == NULL)
                 {
                     printf("Error oppenning file to write!\n");
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
+                free(allMessages);
                 printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);
