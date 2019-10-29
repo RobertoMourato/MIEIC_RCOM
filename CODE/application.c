@@ -255,10 +255,11 @@ int interface()
                     memcpy(allMessages + aux, message, sizeOfMessage);
                     aux += sizeOfMessage;
                     //free(message);
+                    break;
                 }
                 printf("fileName: %s\n",fileName);
                 printf("allMessages: %s\n",allMessages);
-                print_buf("data",allMessages,sizeOfAllMessages);
+                //print_buf("data",allMessages,sizeOfAllMessages);
                 FILE *file = fopen((char *)fileName, "wb+");
                 if (file == NULL)
                 {
