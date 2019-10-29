@@ -39,10 +39,11 @@ int llopen(int port, int type)
     int fd, res;
     struct termios newtio;
     char buf[255];
-    char portStr[20] = "/dev/ttyS"; //to append to the port number
+    char portStr[20] = "/dev/ttyS0"; //to append to the port number
     char portNr = port + '0';
     puts(&portNr);
     strcat(portStr, &portNr);
+    
     //set layer pressets using flags defined
     setLinkLayer(&layerPressets, portStr);
     /*
@@ -265,19 +266,22 @@ int llwrite(int fd, unsigned char *buffer, int length)
     (void)signal(SIGALRM, alarm_handler);
     //install alarm
 
-    while (attempt < layerPressets.numTransmissions)
+    int rejected = 1;
+
+    while (attempt < layerPressets.numTransmissions || rejected)
     {
         if (flag)
         { // this flag is not from this function I think
-             //TODO printf("Writing data_frame\n");
+            printf("Writing data_frame\n");
             res = write(fd, data_frame, data_frame_size);
             if (res < 0)
             {
                 printf("Error writting to port!\n");
+                free(data_frame);
                 return -1;
             }
 
-            //TODO printf("going to read control field sent from read\n");
+            printf("going to read control field sent from read\n");
 
             alarm(layerPressets.timeout);
             flag = 0;
@@ -286,11 +290,22 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
             if ((data_frame[2] == NS_0 && control_field == RR1) || (data_frame[2] == NS_1 && control_field == RR0))
             {
-                //TODO printf("control field from write and read compatable\n");
+                printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
+
+                rejected = 0;
+
                 turnoff_alarm();
                 free(data_frame);
+
                 return 0;
+            }
+            else if (control_field == REJ0 || control_field == REJ1)
+            {
+                printf("\n rejected \n");
+                rejected = 1;
+                turnoff_alarm();
+                
             }
             //read the ACK or NACK choose what to do!
         }
