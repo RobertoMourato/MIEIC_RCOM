@@ -208,7 +208,6 @@ int interface()
 
                 int sizeOfStartTransmition = 0;
                 int sizeOfMessage = 0;
-                int sizeWithNoHeader = 0;
                 off_t sizeOfAllMessages = 0;
                 off_t aux = 0;
 
@@ -245,16 +244,16 @@ int interface()
                         break;
                     }
 
-                    sizeWithNoHeader = 0;
-                    message = headerRemoval(message, sizeOfMessage, &sizeWithNoHeader);
+                    message = headerRemoval(message, sizeOfMessage);
+                    sizeOfMessage=sizeOfMessage-4;
                    
                     //TODO erro ta aqui 
-                    print_buf("New message",message,sizeOfMessage);
+                    print_buf("New message after header removal",message,sizeOfMessage);
                     /*for(int i =0; i<sizeWithNoHeader; i++){
                         allMessages[i+aux]= message[i];
                     }*/
-                    memcpy(allMessages + aux, message, sizeWithNoHeader);
-                    aux += sizeWithNoHeader;
+                    memcpy(allMessages + aux, message, sizeOfMessage);
+                    aux += sizeOfMessage;
                     //free(message);
                 }
                 printf("fileName: %s\n",fileName);

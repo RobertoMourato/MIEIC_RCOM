@@ -431,17 +431,17 @@ int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTr
     return TRUE;
 }
 
-unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader)
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage)
 {
 
     unsigned char *aux = (unsigned char *)malloc(sizeOfMessage - 4);
 
-    for (size_t i = 0; (i + 4) < (size_t)sizeOfMessage; i++)
+    for (size_t i = 4; i < (size_t)sizeOfMessage; i++)
     {
-        aux[i] = message[i + 4];
+        aux[i-4] = message[i];
+        //printf("%02X", message[i]);
     }
 
-    *sizeWithNoHeader = sizeOfMessage - 4;
     return aux;
 }
 
