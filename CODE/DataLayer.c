@@ -287,6 +287,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
                 printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
                 turnoff_alarm();
+                free(data_frame);
                 return 0;
             }
             //read the ACK or NACK choose what to do!
