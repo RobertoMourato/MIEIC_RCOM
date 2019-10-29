@@ -177,7 +177,7 @@ int interface()
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
-                    free(fileData);
+                   
                     int dataPackSize = 0;
                     printf("tmp size: %ld\n",strlen(tmpPack));
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
@@ -191,6 +191,7 @@ int interface()
                     }
                     
                 }
+                 free(fileData);
                 //send PH Data start
                 controlPackSize = 0;
                 controlPack = makeControlPacket(END, path, metadata.st_size, &controlPackSize);
