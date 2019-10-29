@@ -390,6 +390,7 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
     }
     printf("aux: %d\n",aux);
     printf("auxSize: %s\n",auxSize);
+    print_buf("ahahahahah: ", auxSize, aux);
     //Get filename
     if(startTransmition[4+aux-1] == T2){
         namesize = (int) startTransmition[5+aux-1]; 
@@ -401,7 +402,7 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
     printf("name: %d\n",namesize);
     printf("auxName: %s\n",auxName);
     //set variables 
-    memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
+    memcpy((void *)sizeOfAllMessages,(void *)auxSize,(size_t)aux);
     fileName =  realloc(fileName,namesize);
     memcpy(fileName,auxName,namesize);
 
