@@ -17,6 +17,8 @@
 applicationLayer app;
 extern linkLayer layerPressets;
 
+unsigned int numMsg = 0;
+
 int main(void)
 { //run console UI
     interface();
@@ -104,7 +106,7 @@ int interface()
                 int eof;
 
                 //vars common
-                unsigned char *fileData;
+                //unsigned char *fileData;
 
             case (TRANSMITTER):
 
@@ -127,10 +129,10 @@ int interface()
                 stat(path, &metadata);
                 printf("This file has %ld bytes \n", metadata.st_size);
                 //alloc memory to store the image
-                
-                fileData = (unsigned char *)malloc(metadata.st_size);
-                res = fread(fileData, sizeof(unsigned char), metadata.st_size, f);
-                
+
+                //fileData = (unsigned char *)malloc(metadata.st_size);
+                //res = fread(fileData, sizeof(unsigned char), metadata.st_size, f);
+
                 if (res < 0)
                 {
                     printf("Error reading file!\n");
@@ -138,7 +140,52 @@ int interface()
                 else
                     printf("File read has %d Bytes\n ", res);
 
-                //close file
+                //printf("It will make %f File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
+                //send PH Data start
+
+                int controlPackSize = 0;
+
+                controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
+                //printf("Controll pack size %d\n", controlPackSize);
+
+                //print_buf("Control", controlPack, controlPackSize);
+
+                //START WRITTING STUFF
+
+                //printf("Writing Start Control pack...\n");
+                if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
+                {
+                    printf("Error writting start control packet\n");
+                    return -1;
+                }
+
+                //while splitting the file
+                char *filePack = malloc(MAX_SIZE);
+                //TODO APPLY MOD
+                // read file chunks
+                unsigned int readBytes = 0, writtenBytes = 0, i = 0;
+                printf("ola\n");
+                while ((readBytes = fread(filePack, sizeof(char), MAX_SIZE, f)) > 0)
+                {
+                    printf("readbytes %d\n",readBytes);
+                    // send those chunks inside data packages
+                    if (!sendDataPackage(app.fileDescriptor, (i++) % 255, filePack, readBytes))
+                    {
+                        free(filePack);
+                        return 0;
+                    }
+
+                    // reset file buffer
+                    filePack = memset(filePack, 0, MAX_SIZE);
+
+                    // increment no. of written bytes
+                    writtenBytes += readBytes;
+
+                }
+
+                free(filePack);
+
+                 //close file
                 res = fclose(f);
                 if (res != 0)
                 {
@@ -148,62 +195,51 @@ int interface()
                 else
                     printf("File closed...\n");
 
-                //printf("It will make %f File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
-                //send PH Data start
-                
-                int controlPackSize = 0;
-                
-                controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
-                printf("Controll pack size %d\n", controlPackSize);
-
-                print_buf("Control", controlPack, controlPackSize);
-
-                //START WRITTING STUFF
-               
-                printf("Writing Start Control pack...\n");
-                if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
-                {
-                    printf("Error writting start control packet\n");
-                    return -1;
-                }
-                
-                //while splitting the file
-                //TODO APPLY MOD
+                /*
                 for (int i = 0; i < ((int)metadata.st_size) / MAX_SIZE + 1; i++)
                 {
                     //split data to send
-                    char tmpPack[MAX_SIZE-1]; //todo if file is shorter 
+                    //char tmpPack[tmp_pack_size-1]; //todo if file is shorter 
+                    
+                    //printf("tmp size: %ld\n",strlen(tmpPack));
+
+                    tmpPack = memset(tmpPack,0, MAX_SIZE);
+                    printf("tmp size: %ld\n",strlen((char*)tmpPack));
+
                     for (int j = 0; j < MAX_SIZE; j++)
                     {
                         tmpPack[j] = fileData[i * MAX_SIZE + j];
                     }
-                   
                     int dataPackSize = 0;
-                    printf("tmp size: %ld\n",strlen(tmpPack));
+
+                    printf("tmp size: %ld\n",strlen((char*)tmpPack));
                     unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
                     
-                    print_buf("Data Pack",dataPack,dataPackSize);
-    
+                    //print_buf("Data Pack",dataPack,dataPackSize);
+                    //printf("Tamanho: %ld\n",sizeof(dataPack));
+
                     if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
                     { //wait for the return value
                         printf("Error writting mid control packet\n");
                         return -1;
                     }
+                    numMsg++;
                     
                 }
-                 free(fileData);
+                free(tmpPack);
+                */
+
                 //send PH Data start
                 controlPackSize = 0;
                 controlPack = makeControlPacket(END, path, metadata.st_size, &controlPackSize);
-                printf("size %d\n", controlPackSize);
+                //printf("size %d\n", controlPackSize);
                 if (llwrite(app.fileDescriptor, controlPack, controlPackSize) == -1)
                 {
                     printf("Error writting start control packet");
                     return -1;
                 }
                 //if any of this fails, process will end
-                free(controlPack);
-
+                printf("ive sent %d messages\n", numMsg);
                 break;
             case (RECEIVER):
 
@@ -211,68 +247,68 @@ int interface()
 
                 int sizeOfStartTransmition = 0;
                 int sizeOfMessage = 0;
-                int sizeWithNoHeader = 0;
                 off_t sizeOfAllMessages = 0;
                 off_t aux = 0;
 
-                unsigned char *startTransmition = (unsigned char *)malloc(255);
-                unsigned char *message;
+                unsigned char *startTransmition = (unsigned char *)malloc(0);
                 unsigned char *fileName = (unsigned char *)malloc(0);
 
                 sizeOfStartTransmition = llread(app.fileDescriptor, startTransmition);
                 printf("Read message with %d\n", sizeOfStartTransmition);
 
                 setThingsFromStart(&sizeOfAllMessages, fileName, startTransmition);
-                printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
-                printf("fileName: %s\n",fileName);
-                
+                printf("sizeOfAllMessages: %ld\n", sizeOfAllMessages);
+                printf("fileName: %s\n", fileName);
+
+                //printf("Read message with %d\n", sizeOfStartTransmition);
+                //print_buf("message with header",startTransmition,sizeOfStartTransmition);
+
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
 
                 while (!eof)
                 {
-                    message = (unsigned char *)malloc(0);
+                    unsigned char *message = (unsigned char *)malloc(0);
                     sizeOfMessage = llread(app.fileDescriptor, message);
                     printf("Read message with %d\n", sizeOfMessage);
-                    print_buf("message with header",message,sizeOfMessage);
+                    //print_buf("message with header",message,sizeOfMessage);
 
                     if (sizeOfMessage == 0)
                     {
-                        continue;
+                        exit(900);
                     }
 
                     if (endReached(message, sizeOfMessage, startTransmition, sizeOfStartTransmition))
                     {
                         printf("End Reached!\n");
-                        free(startTransmition);
                         break;
                     }
 
-                    sizeWithNoHeader = 0;
-                    message = headerRemoval(message, sizeOfMessage, &sizeWithNoHeader);
-                   
-                    //TODO erro ta aqui 
-                    print_buf("New message",message,sizeOfMessage);
-                    for(int i =0; i<sizeWithNoHeader; i++){
-                        allMessages[i+aux]= message[i];
-                    }
-                    //memcpy(allMessages + aux, message, sizeWithNoHeader);
-                    aux += sizeWithNoHeader;
+                    message = headerRemoval(message, sizeOfMessage);
+                    sizeOfMessage = sizeOfMessage - 4;
 
+                    //TODO erro ta aqui
+                    //print_buf("New message after header removal",message,sizeOfMessage);
+                    /*for(int i =0; i<sizeWithNoHeader; i++){
+                        allMessages[i+aux]= message[i];
+                    }*/
+                    memcpy(allMessages + aux, message, sizeOfMessage);
+                    aux += sizeOfMessage;
+                    printf("aux %ld\n", aux);
+                    numMsg++;
                     free(message);
                 }
-                printf("fileName: %s\n",fileName);
+                printf("fileName: %s\n", fileName);
                 //printf("allMessages: %s\n",allMessages);
                 //print_buf("data",allMessages,sizeOfAllMessages);
+
                 FILE *file = fopen((char *)fileName, "wb+");
-                free(fileName);
                 if (file == NULL)
                 {
                     printf("Error oppenning file to write!\n");
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
-                free(allMessages);
-                printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
+                printf("sizeOfAllMessages: %ld\n", sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);
                 if (res != 0)
@@ -280,7 +316,7 @@ int interface()
                     printf("Error closing file!\n");
                     return -1;
                 }
-
+                printf("ive read %d messages\n", numMsg);
             }
             break;
         case 2:

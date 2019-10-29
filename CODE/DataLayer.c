@@ -179,12 +179,12 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     if (num_frame == 0)
     {
-        printf("R(0)\n");
+        //printf("R(0)\n");
         data_frame[2] = NS_0;
     }
     else
     {
-        printf("R(1)\n");
+        //printf("R(1)\n");
         data_frame[2] = NS_1;
     }
 
@@ -192,7 +192,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     int data_frame_inside_counter = 4;
 
-    printf("Stuffing Bytes...\n");
+    //printf("Stuffing Bytes...\n");
     for (int i = 0; i < length; i++)
     {
 
@@ -221,14 +221,15 @@ int llwrite(int fd, unsigned char *buffer, int length)
         }
     }
     //só para dados dps de byte stuffing
+    /*
     for (int i = 0; i < data_frame_size; ++i)
         fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
-    
+    */
     
     
     if (BCC_data == FLAG)
     {
-        printf("inside bcc mode1");
+        //printf("inside bcc mode1");
         data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
         data_frame[data_frame_size - 3] = ESC;
         data_frame[data_frame_size - 2] = FLAG_NEXT;
@@ -236,7 +237,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
     }
     else if (BCC_data == ESC)
     {
-        printf("inside bcc mode 2");
+        //printf("inside bcc mode 2");
         data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
         data_frame[data_frame_size - 3] = ESC;
         data_frame[data_frame_size - 2] = ESC_NEXT;
@@ -250,15 +251,16 @@ int llwrite(int fd, unsigned char *buffer, int length)
   
     data_frame[data_frame_size - 1] = FLAG;
 
-    printf("\n");
-    printf("with flag \n");
+    //printf("\n");
+   // printf("with flag \n");
     //para frame todo
+    /*
     for (int i = 0; i < data_frame_size; ++i)
         fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
-    printf("\n");
+    printf("\n");*/
 
     printf("data frame size: %i \n", data_frame_size);
-    print_buf("to pass: ", data_frame, data_frame_size);
+    //print_buf("to pass: ", data_frame, data_frame_size);
 
     (void)signal(SIGALRM, alarm_handler);
     //install alarm
@@ -267,7 +269,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
     {
         if (flag)
         { // this flag is not from this function I think
-            printf("Writing data_frame\n");
+             //TODO printf("Writing data_frame\n");
             res = write(fd, data_frame, data_frame_size);
             if (res < 0)
             {
@@ -275,7 +277,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
                 return -1;
             }
 
-            printf("going to read control field sent from read\n");
+            //TODO printf("going to read control field sent from read\n");
 
             alarm(layerPressets.timeout);
             flag = 0;
@@ -284,16 +286,17 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
             if ((data_frame[2] == NS_0 && control_field == RR1) || (data_frame[2] == NS_1 && control_field == RR0))
             {
-                printf("control field from write and read compatable\n");
+                //TODO printf("control field from write and read compatable\n");
                 num_frame = num_frame ^ 1;
                 turnoff_alarm();
+                free(data_frame);
                 return 0;
             }
             //read the ACK or NACK choose what to do!
         }
     }
     free(data_frame);
-    printf("ola\n");
+    //printf("ola\n");
     return -1;
 }
 
@@ -365,29 +368,29 @@ int llread(int fd, unsigned char *buffer)
                     if (auxTrama == 0)
                     {
                         sendControlMessage(fd, RR1);
-                        printf("Enviou RR1\n");
+                        //TODO printf("Enviou RR1\n");
                     }
                     else
                     {
                         sendControlMessage(fd, RR0);
-                        printf("Enviou RR0\n");
+                        //TODOprintf("Enviou RR0\n");
                     }
 
                     state = 6;
                     sendData = TRUE;
-                    printf("auxTrama, T: %d\n", auxTrama);
+                    //TODO printf("auxTrama, T: %d\n", auxTrama);
                 }
                 else
                 {
                     if (auxTrama == 0)
                     {
                         sendControlMessage(fd, REJ1);
-                        printf("Enviou REJ1\n");
+                        //TODOprintf("Enviou REJ1\n");
                     }
                     else
                     {
                         sendControlMessage(fd, REJ0);
-                        printf("Enviou REJ0\n");
+                        //TODO printf("Enviou REJ0\n");
                     }
                     state = 6;
                     sendData = FALSE;
@@ -429,12 +432,12 @@ int llread(int fd, unsigned char *buffer)
         }
     }
 
-    printf("Message size: %d\n", sizeBuffer);
-    print_buf("llread", buffer, sizeBuffer);
+    //printf("Message size: %d\n", sizeBuffer);
+    //print_buf("llread", buffer, sizeBuffer);
     //message tem BCC2 no fim
     buffer = (unsigned char *)realloc(buffer, sizeBuffer - 1);
 
-    print_buf("after", buffer, sizeBuffer);
+    //print_buf("after", buffer, sizeBuffer);
     
     sizeBuffer = sizeBuffer - 1;
     if (sendData)

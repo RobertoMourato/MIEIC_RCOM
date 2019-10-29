@@ -35,7 +35,7 @@
 #define SEQNUM 0
 #define TIMEOUT 3
 #define ATEMPTS 3
-#define MAX_SIZE 128
+#define MAX_SIZE 16
 
 //ALARM 
 #define VTIMEVAL 0   /* inter-character timer unused */
@@ -96,6 +96,8 @@ void setLinkLayer(linkLayer *linklayer,char port[]);
  */
 unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
 
+int sendDataPackage(int fd, int N, const char* buffer, int length);
+
 /**
  * @brief make control packet 
  * @param path filename path 
@@ -104,7 +106,7 @@ unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlP
  * @param linkLayer linkpressets so that i can acsses message seq number count
  * @return char * with control packet
  */
-unsigned char * makeDatePacket(char data[],int *dataPackLen,off_t filesize,linkLayer *linkLayer);
+unsigned char * makeDatePacket(unsigned char *data,int *dataPackLen,off_t filesize,linkLayer *linkLayer);
 
 /**
  * @brief set reception state machine 
@@ -148,7 +150,7 @@ unsigned char read_control_field(int fd);
 unsigned char *startFileName(unsigned char *start);
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
 int endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
-unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader);
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage);
 int checkBCC2(unsigned char *message, int sizeMessage);
 void sendControlMessage(int fd, unsigned char C);
 

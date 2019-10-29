@@ -61,10 +61,10 @@ unsigned char *makeControlPacket(int type, char path[], off_t filesize, int *con
     return controlPacket;
 }
 
-unsigned char *makeDatePacket(char data[], int *dataPackLen, off_t filesize, linkLayer *linkLayer)
+unsigned char *makeDatePacket(unsigned char *data, int *dataPackLen, off_t filesize, linkLayer *linkLayer)
 {
 
-    *dataPackLen = 4 + strlen(data); // C+N+L1+L2
+    *dataPackLen = 4 + strlen((char*)data); // C+N+L1+L2
     unsigned char *dataPacket = (unsigned char *)malloc(*dataPackLen);
 
     dataPacket[0] = C1;
@@ -80,6 +80,31 @@ unsigned char *makeDatePacket(char data[], int *dataPackLen, off_t filesize, lin
     linkLayer->sequenceNumber++;
 
     return dataPacket;
+}
+
+int sendDataPackage(int fd, int N, const char* buffer, int length) {
+
+	unsigned int dataPackLen = 4 + length; // C+N+L1+L2
+
+	unsigned char* dataPacket = (unsigned char*) malloc(dataPackLen);
+
+	// build package header
+	dataPacket[0] = C1;
+	dataPacket[1] = N;
+	dataPacket[2] = length / 256;
+	dataPacket[3] = length % 256;
+
+	// copy file chunk to package
+	memcpy(&dataPacket[4], buffer, length);
+
+	// write package
+	if (llwrite(fd, dataPacket, dataPackLen)>0) {
+		printf("ERROR: Could not write to link layer while sending data package.\n"); //TODO mudar
+		free(dataPacket);
+		return 0;
+	}
+	free(dataPacket);
+	return 1;
 }
 
 void set_reception(supervision_instance_data_t *machine, unsigned char pack)
@@ -300,7 +325,7 @@ unsigned char read_control_field(int fd)
     while (!flag && !(SU_state.state == stop))
     {
         read(fd, &part_of_frame, 1);
-        print_buf(" ",&part_of_frame,1);
+        //print_buf(" ",&part_of_frame,1);
 
         switch (SU_state.state)
         {
@@ -383,13 +408,15 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
     //Get filesize
     if(startTransmition[1] == T1){ 
        // printf("index %d\n",i);
-       for( int i = 0; i<aux ; i++){
-           auxSize[i]= startTransmition[3+i];
+       int j = aux-1;
+       for( int i = 0; i<aux; i++){
+           auxSize[i]= startTransmition[3+j];
+           j--;
        }
 
     }
-    printf("aux: %d\n",aux);
-    printf("auxSize: %s\n",auxSize);
+   // printf("aux: %d\n",aux);
+    //print_buf("auxSize:\n",auxSize,aux);
     //Get filename
     if(startTransmition[4+aux-1] == T2){
         namesize = (int) startTransmition[5+aux-1]; 
@@ -398,8 +425,8 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
             auxName[i]= startTransmition[6+aux-1+i];
         }
     }
-    printf("name: %d\n",namesize);
-    printf("auxName: %s\n",auxName);
+    //printf("name: %d\n",namesize);
+   // printf("auxName: %s\n",auxName);
     //set variables 
     memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
     fileName =  realloc(fileName,namesize);
@@ -431,17 +458,17 @@ int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTr
     return TRUE;
 }
 
-unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage, int *sizeWithNoHeader)
+unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage)
 {
 
     unsigned char *aux = (unsigned char *)malloc(sizeOfMessage - 4);
 
-    for (size_t i = 0; (i + 4) < (size_t)sizeOfMessage; i++)
+    for (size_t i = 4; i < (size_t)sizeOfMessage; i++)
     {
-        aux[i] = message[i + 4];
+        aux[i-4] = message[i];
+        //printf("%02X", message[i]);
     }
 
-    *sizeWithNoHeader = sizeOfMessage - 4;
     return aux;
 }
 
@@ -469,7 +496,7 @@ void sendControlMessage(int fd, unsigned char C)
     message[2] = C;
     message[3] = message[1] ^ message[2];
     message[4] = FLAG;
-    print_buf("Sent control message: ", message, sizeof(message));
+    //print_buf("Sent control message: ", message, sizeof(message));
     write(fd, message, sizeof(message));
 }
 
