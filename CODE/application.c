@@ -222,6 +222,9 @@ int interface()
                 printf("sizeOfAllMessages: %ld\n",sizeOfAllMessages);
                 printf("fileName: %s\n",fileName);
                 
+                printf("Read message with %d\n", sizeOfStartTransmition);
+                print_buf("message with header",startTransmition,sizeOfStartTransmition);
+
                 unsigned char *allMessages = (unsigned char *)malloc(sizeOfAllMessages);
 
                 while (!eof)
@@ -229,7 +232,7 @@ int interface()
                     unsigned char *message = (unsigned char *)malloc(0);
                     sizeOfMessage = llread(app.fileDescriptor, message);
                     printf("Read message with %d\n", sizeOfMessage);
-                    print_buf("message with header",message,sizeOfMessage+1);
+                    print_buf("message with header",message,sizeOfMessage);
 
                     if (sizeOfMessage == 0)
                     {
@@ -247,9 +250,9 @@ int interface()
                    
                     //TODO erro ta aqui 
                     print_buf("New message",message,sizeOfMessage);
-                    for(int i =0; i<sizeWithNoHeader; i++){
+                    /*for(int i =0; i<sizeWithNoHeader; i++){
                         allMessages[i+aux]= message[i];
-                    }
+                    }*/
                     memcpy(allMessages + aux, message, sizeWithNoHeader);
                     aux += sizeWithNoHeader;
                     //free(message);
