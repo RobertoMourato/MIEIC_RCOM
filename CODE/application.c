@@ -274,12 +274,13 @@ int interface()
 
                     if (sizeOfMessage == 0)
                     {
-                        exit(900);
+                        continue; 
                     }
 
                     if (endReached(message, sizeOfMessage, startTransmition, sizeOfStartTransmition))
                     {
                         printf("End Reached!\n");
+                        free(startTransmition);                        
                         break;
                     }
 
@@ -297,17 +298,23 @@ int interface()
                     numMsg++;
                     free(message);
                 }
+                
                 printf("fileName: %s\n", fileName);
                 //printf("allMessages: %s\n",allMessages);
                 //print_buf("data",allMessages,sizeOfAllMessages);
 
                 FILE *file = fopen((char *)fileName, "wb+");
+
+                free(fileName);
+
                 if (file == NULL)
                 {
                     printf("Error oppenning file to write!\n");
                     return -1;
                 }
                 fwrite((void *)allMessages, 1, (off_t)sizeOfAllMessages, file);
+
+                free(allMessages);
                 printf("sizeOfAllMessages: %ld\n", sizeOfAllMessages);
                 printf("New file created\n");
                 res = fclose(file);

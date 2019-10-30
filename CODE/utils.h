@@ -35,7 +35,7 @@
 #define SEQNUM 0
 #define TIMEOUT 3
 #define ATEMPTS 3
-#define MAX_SIZE 16
+#define MAX_SIZE 1024
 
 //ALARM 
 #define VTIMEVAL 0   /* inter-character timer unused */

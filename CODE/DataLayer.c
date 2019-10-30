@@ -22,6 +22,8 @@ unsigned char disc[5] = {FLAG, A_3, DISC, A_3 ^ DISC, FLAG};
 //unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
 //unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
 
+extern applicationLayer app;
+
 int num_frame = 0;
 
 int portState;
@@ -40,9 +42,9 @@ int llopen(int port, int type)
     struct termios newtio;
     char buf[255];
     char portStr[20] = "/dev/ttyS0"; //to append to the port number
-    char portNr = port + '0';
-    puts(&portNr);
-    strcat(portStr, &portNr);
+    //char portNr = port + '0';
+    //puts(&portNr);
+    //strcat(portStr, &portNr);
     
     //set layer pressets using flags defined
     setLinkLayer(&layerPressets, portStr);
@@ -50,6 +52,8 @@ int llopen(int port, int type)
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
     */
+    if(port != 0)    
+       printf("port doesnt match\n");
 
     fd = open(portStr, O_RDWR | O_NOCTTY);
     if (fd < 0)
@@ -89,6 +93,9 @@ int llopen(int port, int type)
     }
 
     printf("New termios structure set\n");
+    
+    //set tmp filedescriptor    
+    app.fileDescriptor = fd;
 
     switch (type)
     {
@@ -101,6 +108,8 @@ int llopen(int port, int type)
         {
             if (flag)
             {
+
+                fcntl(fd,F_SETFL,~O_NONBLOCK);
                 //SENDING SET
                 printf("attempt %d...\n", attempt);
                 printf("Sending SET...\n");
@@ -108,14 +117,16 @@ int llopen(int port, int type)
                 res = write(fd, set, 5);
                 if (res < 0)
                     exit(ERR_WR);
-
+                
                 alarm(layerPressets.timeout);
                 flag = 0;
 
                 printf("Receiving UA...\n");
                 for (int i = 0; i < 5; i++)
-                {
+                {   
+                   
                     res = read(fd, &buf[i], 1);
+            
                     ua_reception(&machineOpenTransmitter, buf[i]);
                     if (machineOpenTransmitter.state == stop)
                         printf("Succsefully passed UA\n");
@@ -126,6 +137,7 @@ int llopen(int port, int type)
                     printf("Passei corretamente!\n");
                     return fd;
                 }
+               
             }
         }
         return -1;
@@ -273,6 +285,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
         if (flag)
         { // this flag is not from this function I think
             printf("Writing data_frame\n");
+            fcntl(fd,F_SETFL,~O_NONBLOCK);
             res = write(fd, data_frame, data_frame_size);
             if (res < 0)
             {
@@ -308,6 +321,11 @@ int llwrite(int fd, unsigned char *buffer, int length)
                 
             }
             //read the ACK or NACK choose what to do!
+            if(attempt > layerPressets.numTransmissions)
+            {
+                printf("\n time out \n");
+                exit(990);
+            }
         }
     }
     free(data_frame);
@@ -484,6 +502,7 @@ int llclose(int fd)
         {
             if (flag)
             {
+                fcntl(app.fileDescriptor,F_SETFL,~O_NONBLOCK);
                 //Send DISC
                 printf("Sending DISC...\n");
                 res = write(fd, disc, 5);
@@ -491,6 +510,7 @@ int llclose(int fd)
                     exit(ERR_WR);
 
                 alarm(layerPressets.timeout);
+                flag=0;
 
                 //WAIT FOR DISC ACK
                 printf("Receiving RECEIVER DISC...\n");
