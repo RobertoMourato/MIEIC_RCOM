@@ -105,9 +105,6 @@ int interface()
 
                 int eof;
 
-                //vars common
-                //unsigned char *fileData;
-
             case (TRANSMITTER):
 
                 //UI
@@ -128,10 +125,6 @@ int interface()
                 //get img size value
                 stat(path, &metadata);
                 printf("This file has %ld bytes \n", metadata.st_size);
-                //alloc memory to store the image
-
-                //fileData = (unsigned char *)malloc(metadata.st_size);
-                //res = fread(fileData, sizeof(unsigned char), metadata.st_size, f);
 
                 if (res < 0)
                 {
@@ -140,19 +133,13 @@ int interface()
                 else
                     printf("File read has %d Bytes\n ", res);
 
-                //printf("It will make %f File chunks\n", ((int)metadata.st_size) / MAX_SIZE);
-                //send PH Data start
-
                 int controlPackSize = 0;
 
                 controlPack = makeControlPacket(START, path, metadata.st_size, &controlPackSize);
-                //printf("Controll pack size %d\n", controlPackSize);
-
-                //print_buf("Control", controlPack, controlPackSize);
 
                 //START WRITTING STUFF
 
-                //printf("Writing Start Control pack...\n");
+                printf("Writing Start Control pack...\n");
                 if (llwrite(app.fileDescriptor, controlPack, controlPackSize) != 0)
                 {
                     printf("Error writting start control packet\n");
@@ -161,15 +148,13 @@ int interface()
 
                 //while splitting the file
                 char *filePack = malloc(MAX_SIZE);
-                //TODO APPLY MOD
                 // read file chunks
-                unsigned int readBytes = 0, writtenBytes = 0, i = 0;
-                printf("ola\n");
+                unsigned int readBytes = 0, writtenBytes = 0;
                 while ((readBytes = fread(filePack, sizeof(char), MAX_SIZE, f)) > 0)
                 {
                     printf("readbytes %d\n",readBytes);
                     // send those chunks inside data packages
-                    if (!sendDataPackage(app.fileDescriptor, (i++) % 255, filePack, readBytes))
+                    if (!sendDataPacket(app.fileDescriptor, &layerPressets, filePack, readBytes))
                     {
                         free(filePack);
                         return 0;

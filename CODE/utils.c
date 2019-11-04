@@ -61,28 +61,7 @@ unsigned char *makeControlPacket(int type, char path[], off_t filesize, int *con
     return controlPacket;
 }
 
-unsigned char *makeDatePacket(unsigned char *data, int *dataPackLen, off_t filesize, linkLayer *linkLayer)
-{
-
-    *dataPackLen = 4 + strlen((char*)data); // C+N+L1+L2
-    unsigned char *dataPacket = (unsigned char *)malloc(*dataPackLen);
-
-    dataPacket[0] = C1;
-    dataPacket[1] = linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
-    dataPacket[2] = (int)filesize / 256;            //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
-    dataPacket[3] = (int)filesize % 256;            //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
-    for (int i = 0; i < MAX_SIZE; i++)
-    {
-        dataPacket[4+i]=data[i];
-    }
-
-    //increment sequenceNumber
-    linkLayer->sequenceNumber++;
-
-    return dataPacket;
-}
-
-int sendDataPackage(int fd, int N, const char* buffer, int length) {
+int sendDataPacket(int fd, linkLayer *linkLayer,const char* buffer, int length) {
 
 	unsigned int dataPackLen = 4 + length; // C+N+L1+L2
 
@@ -90,9 +69,9 @@ int sendDataPackage(int fd, int N, const char* buffer, int length) {
 
 	// build package header
 	dataPacket[0] = C1;
-	dataPacket[1] = N;
-	dataPacket[2] = length / 256;
-	dataPacket[3] = length % 256;
+	dataPacket[1] = linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
+	dataPacket[2] = length / 256;  //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
+	dataPacket[3] = length % 256;   //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
 
 	// copy file chunk to package
 	memcpy(&dataPacket[4], buffer, length);
@@ -104,6 +83,8 @@ int sendDataPackage(int fd, int N, const char* buffer, int length) {
 		return 0;
 	}
 	free(dataPacket);
+    //increment sequenceNumber
+    linkLayer->sequenceNumber++;
 	return 1;
 }
 
@@ -224,12 +205,10 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack)
     switch (machine->state)
     {
     case (start):
-        printf("start\n");
         if (pack == FLAG)
             machine->state = flag_rcv;
         break;
     case (flag_rcv):
-        printf("flag\n");
         if (pack == A_3)
         {
             machine->state = a_rcv;
@@ -239,7 +218,6 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack)
             machine->state = start;
         break;
     case (a_rcv):
-        printf("a\n");
         if (pack == DISC)
         {
             machine->state = c_rcv;
@@ -253,7 +231,6 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack)
         machine->state = start;
         break;
     case (c_rcv):
-        printf("c\n");
         if (pack == (A_3 ^ DISC))
         {
             machine->state = bcc_ok;
@@ -267,7 +244,6 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack)
         machine->state = start;
         break;
     case (bcc_ok):
-        printf("bcc\n");
         if (pack == FLAG)
         {
             machine->state = stop;
@@ -293,7 +269,6 @@ unsigned char BCC_make(unsigned char *buffer, int size)
 
 unsigned char *BCC_stuffing(unsigned char BCC)
 {
-    //todo checka isto, porque nao sei o que queres guardar na string
     unsigned char *BCC_stuffed = malloc(sizeof(char));
     if (BCC == ESC)
     {
@@ -325,8 +300,7 @@ unsigned char read_control_field(int fd)
     while (!flag && !(SU_state.state == stop))
     {
         read(fd, &part_of_frame, 1);
-        //print_buf(" ",&part_of_frame,1);
-
+    
         switch (SU_state.state)
         {
         case start:
@@ -381,7 +355,7 @@ unsigned char read_control_field(int fd)
     return '0';
 }
 
-//Roberto
+//TODO Roberto
 
 unsigned char *startFileName(unsigned char *start)
 {
@@ -402,12 +376,10 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
 {
     int aux = (int) startTransmition[2];
     int namesize = 0;
-    //int i = 0; 
     unsigned char * auxSize = malloc(aux);
     unsigned char * auxName;
     //Get filesize
     if(startTransmition[1] == T1){ 
-       // printf("index %d\n",i);
        int j = aux-1;
        for( int i = 0; i<aux; i++){
            auxSize[i]= startTransmition[3+j];
@@ -415,8 +387,7 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
        }
 
     }
-   // printf("aux: %d\n",aux);
-    //print_buf("auxSize:\n",auxSize,aux);
+
     //Get filename
     if(startTransmition[4+aux-1] == T2){
         namesize = (int) startTransmition[5+aux-1]; 
@@ -425,8 +396,7 @@ void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsig
             auxName[i]= startTransmition[6+aux-1+i];
         }
     }
-    //printf("name: %d\n",namesize);
-   // printf("auxName: %s\n",auxName);
+
     //set variables 
     memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
     fileName =  realloc(fileName,namesize);
@@ -466,7 +436,6 @@ unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage)
     for (size_t i = 4; i < (size_t)sizeOfMessage; i++)
     {
         aux[i-4] = message[i];
-        //printf("%02X", message[i]);
     }
 
     return aux;
@@ -496,7 +465,6 @@ void sendControlMessage(int fd, unsigned char C)
     message[2] = C;
     message[3] = message[1] ^ message[2];
     message[4] = FLAG;
-    //print_buf("Sent control message: ", message, sizeof(message));
     write(fd, message, sizeof(message));
 }
 

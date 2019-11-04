@@ -96,17 +96,15 @@ void setLinkLayer(linkLayer *linklayer,char port[]);
  */
 unsigned char * makeControlPacket(int type, char path[],off_t size,int *controlPackLen);
 
-int sendDataPackage(int fd, int N, const char* buffer, int length);
-
 /**
  * @brief make control packet 
- * @param path filename path 
- * @param dataPackLen length of the control pack made
- * @param filesize file of file to write 
+ * @param fd fileDescriptor
  * @param linkLayer linkpressets so that i can acsses message seq number count
- * @return char * with control packet
+ * @param buffer file pack to write
+ * @param length size read
+ * @return postive value if success
  */
-unsigned char * makeDatePacket(unsigned char *data,int *dataPackLen,off_t filesize,linkLayer *linkLayer);
+int sendDataPacket(int fd, linkLayer *linkLayer,const char* buffer, int length);
 
 /**
  * @brief set reception state machine 
@@ -144,6 +142,11 @@ unsigned char BCC_make(unsigned char * buffer, int size);
  */
 unsigned char * BCC_stuffing(unsigned char BCC);
 
+/**
+ * @brief stuffing bcc
+ * @param fd fileDescriptor
+ * @return //todo
+ */
 unsigned char read_control_field(int fd);
 
 //roberto
@@ -154,6 +157,12 @@ unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage);
 int checkBCC2(unsigned char *message, int sizeMessage);
 void sendControlMessage(int fd, unsigned char C);
 
+/**
+ * @brief debug function to print bytes in hexadecimal 
+ * @param title title of the bytes to print 
+ * @param buf buffer with the bytes to print 
+ * @param buf_len length of the buffer 
+ */
 void print_buf(const char *title, unsigned char *buf, size_t buf_len);
 
 #endif // UTILS_H_

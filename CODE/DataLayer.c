@@ -15,12 +15,12 @@
 
 //*GLOBALS
 linkLayer layerPressets;
+
 //Frames (S)(U)
 unsigned char set[5] = {FLAG, A_3, SET, A_3 ^ SET, FLAG};
 unsigned char ua[5] = {FLAG, A_3, UA, A_3 ^ UA, FLAG};
 unsigned char disc[5] = {FLAG, A_3, DISC, A_3 ^ DISC, FLAG};
-//unsigned char ack[5] = {FLAG, A_3, RR, A_3 ^ RR, FLAG};
-//unsigned char nack[5] = {FLAG, A_3, REJ, A_3 ^ REJ, FLAG};
+
 
 extern applicationLayer app;
 
@@ -41,10 +41,10 @@ int llopen(int port, int type)
     int fd, res;
     struct termios newtio;
     char buf[255];
-    char portStr[20] = "/dev/ttyS0"; //to append to the port number
-    //char portNr = port + '0';
-    //puts(&portNr);
-    //strcat(portStr, &portNr);
+    char portStr[20] = "/dev/ttyS"; //to append to the port number
+    char portNr = port + '0';
+    puts(&portNr);
+    strcat(portStr, &portNr);
     
     //set layer pressets using flags defined
     setLinkLayer(&layerPressets, portStr);
@@ -174,12 +174,10 @@ int llopen(int port, int type)
     return fd;
 }
 
-//PROTIPO DO ANDY
 int llwrite(int fd, unsigned char *buffer, int length)
 {
     print_buf("Received: ", buffer, length);
     int res;
-    //unsigned char *buf[255];
     unsigned char BCC_data;
     int data_frame_size = length + 6;
     
@@ -192,12 +190,12 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     if (num_frame == 0)
     {
-        //printf("R(0)\n");
+        printf("R(0)\n");
         data_frame[2] = NS_0;
     }
     else
     {
-        //printf("R(1)\n");
+        printf("R(1)\n");
         data_frame[2] = NS_1;
     }
 
@@ -205,7 +203,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
 
     int data_frame_inside_counter = 4;
 
-    //printf("Stuffing Bytes...\n");
+    printf("Stuffing Bytes...\n");
     for (int i = 0; i < length; i++)
     {
 
@@ -233,16 +231,10 @@ int llwrite(int fd, unsigned char *buffer, int length)
             data_frame_inside_counter++;
         }
     }
-    //só para dados dps de byte stuffing
-    /*
-    for (int i = 0; i < data_frame_size; ++i)
-        fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
-    */
-    
-    
+   
+ 
     if (BCC_data == FLAG)
-    {
-        //printf("inside bcc mode1");
+    {  
         data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
         data_frame[data_frame_size - 3] = ESC;
         data_frame[data_frame_size - 2] = FLAG_NEXT;
@@ -250,7 +242,6 @@ int llwrite(int fd, unsigned char *buffer, int length)
     }
     else if (BCC_data == ESC)
     {
-        //printf("inside bcc mode 2");
         data_frame = (unsigned char *)realloc(data_frame, (sizeof(unsigned char)) * (data_frame_size++));
         data_frame[data_frame_size - 3] = ESC;
         data_frame[data_frame_size - 2] = ESC_NEXT;
@@ -264,16 +255,7 @@ int llwrite(int fd, unsigned char *buffer, int length)
   
     data_frame[data_frame_size - 1] = FLAG;
 
-    //printf("\n");
-   // printf("with flag \n");
-    //para frame todo
-    /*
-    for (int i = 0; i < data_frame_size; ++i)
-        fprintf(stdout, "%02X%s", data_frame[i], (i + 1) % 16 == 0 ? "\r\n" : " ");
-    printf("\n");*/
-
     printf("data frame size: %i \n", data_frame_size);
-    //print_buf("to pass: ", data_frame, data_frame_size);
 
     (void)signal(SIGALRM, alarm_handler);
     //install alarm
@@ -329,7 +311,6 @@ int llwrite(int fd, unsigned char *buffer, int length)
         }
     }
     free(data_frame);
-    //printf("ola\n");
     return -1;
 }
 
@@ -342,13 +323,12 @@ int llread(int fd, unsigned char *buffer)
     int auxTrama = 0;
     int sendData = FALSE;
     int state = 0;
-    //unsigned char buf[255];
 
     while (state != 6)
     {
-        //printf("Reading...\n");
-        read(fd, &packet, 1); //isto esta correto!!!
-                              // printf("%02X\n", packet);
+       
+        read(fd, &packet, 1); 
+    
         switch (state)
         {
         case 0:
@@ -401,29 +381,29 @@ int llread(int fd, unsigned char *buffer)
                     if (auxTrama == 0)
                     {
                         sendControlMessage(fd, RR1);
-                        //TODO printf("Enviou RR1\n");
+                        printf("Enviou RR1\n");
                     }
                     else
                     {
                         sendControlMessage(fd, RR0);
-                        //TODOprintf("Enviou RR0\n");
+                        printf("Enviou RR0\n");
                     }
 
                     state = 6;
                     sendData = TRUE;
-                    //TODO printf("auxTrama, T: %d\n", auxTrama);
+                    printf("auxTrama, T: %d\n", auxTrama);
                 }
                 else
                 {
                     if (auxTrama == 0)
                     {
                         sendControlMessage(fd, REJ1);
-                        //TODOprintf("Enviou REJ1\n");
+                        printf("Enviou REJ1\n");
                     }
                     else
                     {
                         sendControlMessage(fd, REJ0);
-                        //TODO printf("Enviou REJ0\n");
+                        printf("Enviou REJ0\n");
                     }
                     state = 6;
                     sendData = FALSE;
@@ -436,12 +416,10 @@ int llread(int fd, unsigned char *buffer)
             else
             {
                 buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
-                //printf("buf size: %lum\n", sizeof(buffer));
                 buffer[sizeBuffer - 1] = packet;
             }
             break;
         case 5:
-            //printf("5state\n");
             if (packet == FLAG_NEXT)
             {
                 buffer = (unsigned char *)realloc(buffer, ++sizeBuffer);
@@ -465,12 +443,8 @@ int llread(int fd, unsigned char *buffer)
         }
     }
 
-    //printf("Message size: %d\n", sizeBuffer);
-    //print_buf("llread", buffer, sizeBuffer);
     //message tem BCC2 no fim
     buffer = (unsigned char *)realloc(buffer, sizeBuffer - 1);
-
-    //print_buf("after", buffer, sizeBuffer);
     
     sizeBuffer = sizeBuffer - 1;
     if (sendData)
