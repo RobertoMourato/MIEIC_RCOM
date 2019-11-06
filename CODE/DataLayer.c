@@ -320,7 +320,7 @@ int llread(int fd, unsigned char *buffer)
     int sizeBuffer = 0;
     unsigned char packectReaded;
     unsigned char packet;
-    int auxTrama = 0;
+    int frameNumber = 0;
     int sendData = FALSE;
     int state = 0;
 
@@ -349,13 +349,13 @@ int llread(int fd, unsigned char *buffer)
         case 2:
             if (packet == NS_0)
             {
-                auxTrama = 0;
+                frameNumber = 0;
                 packectReaded = packet;
                 state = 3;
             }
             else if (packet == NS_1)
             {
-                auxTrama = 1;
+                frameNumber = 1;
                 packectReaded = packet;
                 state = 3;
             }
@@ -376,9 +376,9 @@ int llread(int fd, unsigned char *buffer)
         case 4:
             if (packet == FLAG)
             {
-                if (checkBCC2(buffer, sizeBuffer))
+                if (checkBcc2(buffer, sizeBuffer))
                 {
-                    if (auxTrama == 0)
+                    if (frameNumber == 0)
                     {
                         sendControlMessage(fd, RR1);
                         printf("Enviou RR1\n");
@@ -391,11 +391,11 @@ int llread(int fd, unsigned char *buffer)
 
                     state = 6;
                     sendData = TRUE;
-                    printf("auxTrama, T: %d\n", auxTrama);
+                    printf("frameNumber, T: %d\n", frameNumber);
                 }
                 else
                 {
-                    if (auxTrama == 0)
+                    if (frameNumber == 0)
                     {
                         sendControlMessage(fd, REJ1);
                         printf("Enviou REJ1\n");
@@ -449,7 +449,7 @@ int llread(int fd, unsigned char *buffer)
     sizeBuffer = sizeBuffer - 1;
     if (sendData)
     {
-        if (auxTrama == num_frame)
+        if (frameNumber == num_frame)
         {
             num_frame ^= 1;
         }

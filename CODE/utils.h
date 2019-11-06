@@ -154,8 +154,8 @@ unsigned char *startFileName(unsigned char *start);
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
 int endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
 unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage);
-int checkBCC2(unsigned char *message, int sizeMessage);
-void sendControlMessage(int fd, unsigned char C);
+int checkBcc2(unsigned char *buffer, int sizeBuffer);
+void sendControlMessage(int fd, unsigned char controlField);
 
 /**
  * @brief debug function to print bytes in hexadecimal 

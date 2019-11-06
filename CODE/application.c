@@ -180,40 +180,6 @@ int interface()
                 else
                     printf("File closed...\n");
 
-                /*
-                for (int i = 0; i < ((int)metadata.st_size) / MAX_SIZE + 1; i++)
-                {
-                    //split data to send
-                    //char tmpPack[tmp_pack_size-1]; //todo if file is shorter 
-                    
-                    //printf("tmp size: %ld\n",strlen(tmpPack));
-
-                    tmpPack = memset(tmpPack,0, MAX_SIZE);
-                    printf("tmp size: %ld\n",strlen((char*)tmpPack));
-
-                    for (int j = 0; j < MAX_SIZE; j++)
-                    {
-                        tmpPack[j] = fileData[i * MAX_SIZE + j];
-                    }
-                    int dataPackSize = 0;
-
-                    printf("tmp size: %ld\n",strlen((char*)tmpPack));
-                    unsigned char *dataPack = makeDatePacket(tmpPack, &dataPackSize, metadata.st_size, &layerPressets);
-                    
-                    //print_buf("Data Pack",dataPack,dataPackSize);
-                    //printf("Tamanho: %ld\n",sizeof(dataPack));
-
-                    if (llwrite(app.fileDescriptor, dataPack, dataPackSize) == -1)
-                    { //wait for the return value
-                        printf("Error writting mid control packet\n");
-                        return -1;
-                    }
-                    numMsg++;
-                    
-                }
-                free(tmpPack);
-                */
-
                 //send PH Data start
                 controlPackSize = 0;
                 controlPack = makeControlPacket(END, path, metadata.st_size, &controlPackSize);
@@ -272,7 +238,6 @@ int interface()
                     message = headerRemoval(message, sizeOfMessage);
                     sizeOfMessage = sizeOfMessage - 4;
 
-                    //TODO erro ta aqui
                     //print_buf("New message after header removal",message,sizeOfMessage);
                     /*for(int i =0; i<sizeWithNoHeader; i++){
                         allMessages[i+aux]= message[i];
@@ -315,7 +280,7 @@ int interface()
             if (llclose(app.fileDescriptor) > 0)
             {
                 printf("Port sucssefully closed!");
-                running_flag = FALSE; //i dont know if it is suppose the program to end ask later
+                running_flag = FALSE;
             }
             else
                 printf("Port didnt close!");

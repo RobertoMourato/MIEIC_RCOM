@@ -61,31 +61,33 @@ unsigned char *makeControlPacket(int type, char path[], off_t filesize, int *con
     return controlPacket;
 }
 
-int sendDataPacket(int fd, linkLayer *linkLayer,const char* buffer, int length) {
+int sendDataPacket(int fd, linkLayer *linkLayer, const char *buffer, int length)
+{
 
-	unsigned int dataPackLen = 4 + length; // C+N+L1+L2
+    unsigned int dataPackLen = 4 + length; // C+N+L1+L2
 
-	unsigned char* dataPacket = (unsigned char*) malloc(dataPackLen);
+    unsigned char *dataPacket = (unsigned char *)malloc(dataPackLen);
 
-	// build package header
-	dataPacket[0] = C1;
-	dataPacket[1] = linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
-	dataPacket[2] = length / 256;  //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
-	dataPacket[3] = length % 256;   //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
+    // build package header
+    dataPacket[0] = C1;
+    dataPacket[1] = linkLayer->sequenceNumber % 255; //N – número de sequência (módulo 255)
+    dataPacket[2] = length / 256;                    //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
+    dataPacket[3] = length % 256;                    //L2 L1 – indica o número de octetos (K) do campo de dados (K = 256 * L2 + L1)
 
-	// copy file chunk to package
-	memcpy(&dataPacket[4], buffer, length);
+    // copy file chunk to package
+    memcpy(&dataPacket[4], buffer, length);
 
-	// write package
-	if (llwrite(fd, dataPacket, dataPackLen)>0) {
-		printf("ERROR: Could not write to link layer while sending data package.\n"); //TODO mudar
-		free(dataPacket);
-		return 0;
-	}
-	free(dataPacket);
+    // write package
+    if (llwrite(fd, dataPacket, dataPackLen) > 0)
+    {
+        printf("ERROR: Could not write to link layer while sending data package.\n"); //TODO mudar
+        free(dataPacket);
+        return 0;
+    }
+    free(dataPacket);
     //increment sequenceNumber
     linkLayer->sequenceNumber++;
-	return 1;
+    return 1;
 }
 
 void set_reception(supervision_instance_data_t *machine, unsigned char pack)
@@ -272,13 +274,13 @@ unsigned char *BCC_stuffing(unsigned char BCC)
     unsigned char *BCC_stuffed = malloc(sizeof(char));
     if (BCC == ESC)
     {
-        BCC_stuffed = (unsigned char*) realloc(BCC_stuffed, 2);
+        BCC_stuffed = (unsigned char *)realloc(BCC_stuffed, 2);
         BCC_stuffed[0] = ESC;
         BCC_stuffed[1] = ESC_NEXT;
     }
     else if (BCC == FLAG)
-    {   
-        BCC_stuffed = (unsigned char*) realloc(BCC_stuffed, 2);
+    {
+        BCC_stuffed = (unsigned char *)realloc(BCC_stuffed, 2);
         BCC_stuffed[0] = ESC;
         BCC_stuffed[1] = FLAG_NEXT;
     }
@@ -300,7 +302,7 @@ unsigned char read_control_field(int fd)
     while (!flag && !(SU_state.state == stop))
     {
         read(fd, &part_of_frame, 1);
-    
+
         switch (SU_state.state)
         {
         case start:
@@ -374,34 +376,36 @@ unsigned char *startFileName(unsigned char *start)
 
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsigned char *startTransmition)
 {
-    int aux = (int) startTransmition[2];
+    int aux = (int)startTransmition[2];
     int namesize = 0;
-    unsigned char * auxSize = malloc(aux);
-    unsigned char * auxName;
+    unsigned char *auxSize = malloc(aux);
+    unsigned char *auxName;
     //Get filesize
-    if(startTransmition[1] == T1){ 
-       int j = aux-1;
-       for( int i = 0; i<aux; i++){
-           auxSize[i]= startTransmition[3+j];
-           j--;
-       }
-
-    }
-
-    //Get filename
-    if(startTransmition[4+aux-1] == T2){
-        namesize = (int) startTransmition[5+aux-1]; 
-        auxName = malloc(namesize);
-        for(int i = 0; i<namesize; i++){
-            auxName[i]= startTransmition[6+aux-1+i];
+    if (startTransmition[1] == T1)
+    {
+        int j = aux - 1;
+        for (int i = 0; i < aux; i++)
+        {
+            auxSize[i] = startTransmition[3 + j];
+            j--;
         }
     }
 
-    //set variables 
-    memcpy(sizeOfAllMessages,(off_t *)auxSize,aux);
-    fileName =  realloc(fileName,namesize);
-    memcpy(fileName,auxName,namesize);
+    //Get filename
+    if (startTransmition[4 + aux - 1] == T2)
+    {
+        namesize = (int)startTransmition[5 + aux - 1];
+        auxName = malloc(namesize);
+        for (int i = 0; i < namesize; i++)
+        {
+            auxName[i] = startTransmition[6 + aux - 1 + i];
+        }
+    }
 
+    //set variables
+    memcpy(sizeOfAllMessages, (off_t *)auxSize, aux);
+    fileName = realloc(fileName, namesize);
+    memcpy(fileName, auxName, namesize);
 }
 
 int endReached(unsigned char *message, int sizeOfMessage, unsigned char *startTransmition, int sizeOfStartTransmition)
@@ -435,21 +439,20 @@ unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage)
 
     for (size_t i = 4; i < (size_t)sizeOfMessage; i++)
     {
-        aux[i-4] = message[i];
+        aux[i - 4] = message[i];
     }
 
     return aux;
 }
 
-int checkBCC2(unsigned char *message, int sizeMessage)
+int checkBcc2(unsigned char *buffer, int sizeBuffer)
 {
-    int i = 1;
-    unsigned char BCC2 = message[0];
-    for (; i < sizeMessage - 1; i++)
+    unsigned char Bcc2 = buffer[0];
+    for (int i = 1; i < sizeBuffer - 1; i++)
     {
-        BCC2 ^= message[i];
+        Bcc2 ^= buffer[i];
     }
-    if (BCC2 == message[sizeMessage - 1])
+    if (Bcc2 == buffer[sizeBuffer - 1])
     {
         return TRUE;
     }
@@ -457,12 +460,12 @@ int checkBCC2(unsigned char *message, int sizeMessage)
         return FALSE;
 }
 
-void sendControlMessage(int fd, unsigned char C)
+void sendControlMessage(int fd, unsigned char controlField)
 {
     unsigned char message[5];
     message[0] = FLAG;
     message[1] = A_3;
-    message[2] = C;
+    message[2] = controlField;
     message[3] = message[1] ^ message[2];
     message[4] = FLAG;
     write(fd, message, sizeof(message));
