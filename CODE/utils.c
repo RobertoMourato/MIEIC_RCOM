@@ -359,21 +359,6 @@ unsigned char read_control_field(int fd)
 
 //TODO Roberto
 
-unsigned char *startFileName(unsigned char *start)
-{
-    int aux = (int)start[8];
-    int i = 0;
-    unsigned char *fileName = (unsigned char *)malloc(aux + 1);
-
-    while (i < aux)
-    {
-        fileName[i] = start[i + 9];
-        i++;
-    }
-    fileName[aux] = '\0';
-    return fileName;
-}
-
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char *fileName, unsigned char *startTransmition)
 {
     int aux = (int)startTransmition[2];
