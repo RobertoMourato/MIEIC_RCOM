@@ -150,7 +150,6 @@ unsigned char * BCC_stuffing(unsigned char BCC);
 unsigned char read_control_field(int fd);
 
 //roberto
-unsigned char *startFileName(unsigned char *start);
 void setThingsFromStart(off_t *sizeOfAllMessages, unsigned char * fileName, unsigned char *startTransmition);
 int endReached(unsigned char * message, int sizeOfMessage, unsigned char * startTransmition, int sizeOfStartTransmition);
 unsigned char *headerRemoval(unsigned char *message, int sizeOfMessage);
