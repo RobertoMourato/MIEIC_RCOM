@@ -269,28 +269,6 @@ unsigned char BCC_make(unsigned char *buffer, int size)
     return BCC;
 }
 
-unsigned char *BCC_stuffing(unsigned char BCC)
-{
-    unsigned char *BCC_stuffed = malloc(sizeof(char));
-    if (BCC == ESC)
-    {
-        BCC_stuffed = (unsigned char *)realloc(BCC_stuffed, 2);
-        BCC_stuffed[0] = ESC;
-        BCC_stuffed[1] = ESC_NEXT;
-    }
-    else if (BCC == FLAG)
-    {
-        BCC_stuffed = (unsigned char *)realloc(BCC_stuffed, 2);
-        BCC_stuffed[0] = ESC;
-        BCC_stuffed[1] = FLAG_NEXT;
-    }
-    else
-    {
-        BCC_stuffed[0] = BCC;
-    }
-    return BCC_stuffed;
-}
-
 unsigned char read_control_field(int fd)
 {
     supervision_instance_data_t SU_state;
