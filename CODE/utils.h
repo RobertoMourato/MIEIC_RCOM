@@ -136,14 +136,7 @@ void disc_reception(supervision_instance_data_t *machine, unsigned char pack);
 unsigned char BCC_make(unsigned char * buffer, int size);
 
 /**
- * @brief stuffing bcc
- * @param BCC //todo
- * @return //todo
- */
-unsigned char * BCC_stuffing(unsigned char BCC);
-
-/**
- * @brief stuffing bcc
+ * @brief read control field from frame
  * @param fd fileDescriptor
  * @return //todo
  */
